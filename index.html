@@ -366,15 +366,8 @@
 
         console.log("RAW ROWS:", rows);
 
-        const headerIndex = rows.findIndex(r =>
-          r.join(" ").toLowerCase().includes("consultant")
-        );
-
-        if (headerIndex === -1) {
-          throw new Error("Could not find header row");
-        }
-
-        const dataRows = rows.slice(headerIndex + 1);
+        // HARD FIX: skip top rows (your data starts around row 6)
+const dataRows = rows.slice(5);;
 
         const consultants = dataRows.map(r => {
           const name = (r[1] || "").trim();
