@@ -145,7 +145,7 @@
       <div class="panel">
         <div class="badge">Live from Google Sheets</div>
         <h1>S4 Group Sales Dashboard</h1>
-        <div class="sub">Simple live dashboard pulling directly from your Google Sheet. No Netlify build circus. Just sheet → page.</div>
+        <div class="sub">Simple live dashboard pulling directly from your Google Sheet.</div>
       </div>
       <div class="panel">
         <div class="section-title">Quarter pulse</div>
@@ -206,8 +206,8 @@
   </div>
 
   <script>
-    // REPLACE THIS with your published Google Sheets CSV URL
-    const CSV_URL = "PASTE_YOUR_PUBLISHED_CSV_URL_HERE";
+    // Replace this with your PUBLISHED CSV link, not the normal /edit link
+    const https://docs.google.com/spreadsheets/d/1RB9rxbcQ5B4RAIuXxymZKD64hRhdsWw1-SuN6GyEG_4/edit?usp=sharing = "PASTE_YOUR_PUBLISHED_CSV_URL_HERE";
 
     const fmtMoney = n => new Intl.NumberFormat('en-ZA', {
       style: 'currency',
@@ -308,14 +308,14 @@
           .filter(line => line.trim() !== "")
           .map(parseCSVLine);
 
-        // Current expected layout from your sheet:
+        // Current sheet layout assumption:
         // col 1 = consultant name
         // col 4 = Apr
         // col 5 = May
         // col 6 = Jun
-        // col 7 = Actual
-        // col 8 = Target
-        // col 9 = Pct
+        // col 7 = Q1 Actual
+        // col 8 = Q1 Target
+        // col 9 = % Achieved
         const consultants = rows.slice(5, 30).map(r => {
           const name = (r[1] || "").trim();
           const apr = cleanNumber(r[4]);
