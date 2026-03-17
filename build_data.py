@@ -2,7 +2,8 @@ import pandas as pd
 import json
 
 # Load Excel
-xls = pd.ExcelFile("S4Group Tracker FY27.xlsx")
+url = "https://docs.google.com/spreadsheets/d/1RB9rxbcQ5B4RAIuXxymZKD64hRhdsWw1-SuN6GyEG_4/export?format=csv&gid=1907582977"
+df = pd.read_csv(url)
 
 # Read main sheet
 df = pd.read_excel(xls, sheet_name="Consultant NFI League")
