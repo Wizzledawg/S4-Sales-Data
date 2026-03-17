@@ -9,11 +9,22 @@ df = df.fillna("")
 def clean_number(value):
     if value is None or value == "":
         return 0.0
+
     text = str(value).strip()
     text = text.replace("R", "").replace(",", "").replace(" ", "")
+
+    is_percent = "%" in text
+    text = text.replace("%", "")
+
     if text == "":
         return 0.0
-    return float(text)
+
+    number = float(text)
+
+    if is_percent:
+        return number / 100
+
+    return number
 
 consultants = []
 
