@@ -1,199 +1,62 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>S4 Group Dashboard</title>
-  <style>
-    :root{
-      --bg:#08111f; --panel:#0f1a2b; --panel2:#14233a; --line:rgba(255,255,255,.08);
-      --text:#edf4ff; --muted:#9db1d0; --blue:#60a5fa; --violet:#8b5cf6;
-      --green:#22c55e; --amber:#f59e0b; --red:#ef4444;
-    }
-    *{box-sizing:border-box}
-    body{
-      margin:0;font-family:Inter,system-ui,Arial,sans-serif;color:var(--text);
-      background:radial-gradient(circle at 100% 0, rgba(96,165,250,.18), transparent 24%),
-      radial-gradient(circle at 0 0, rgba(139,92,246,.16), transparent 18%), var(--bg);
-    }
-    .wrap{max-width:1280px;margin:0 auto;padding:28px}
-    .hero,.kpis,.grid{display:grid;gap:18px}
-    .hero{grid-template-columns:1.5fr .9fr;margin-bottom:18px}
-    .kpis{grid-template-columns:repeat(4,1fr);margin-bottom:18px}
-    .grid{grid-template-columns:1.2fr .8fr}
-    .panel{background:linear-gradient(180deg,rgba(255,255,255,.02),transparent),var(--panel);
-      border:1px solid var(--line);border-radius:22px;padding:18px}
-    .badge{display:inline-flex;padding:7px 11px;border-radius:999px;font-size:12px;font-weight:800;
-      background:rgba(96,165,250,.12);border:1px solid rgba(96,165,250,.28);color:#d9e8ff}
-    h1{margin:10px 0 8px;font-size:32px}
-    .sub,.meta{color:var(--muted);line-height:1.5}
-    .label{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
-    .value{font-size:30px;font-weight:850;margin:8px 0 6px}
-    .section-title{margin:0 0 10px;font-size:18px;font-weight:850}
-    table{width:100%;border-collapse:collapse}
-    th,td{padding:10px 8px;border-bottom:1px solid var(--line);text-align:left}
-    th{color:var(--muted);font-size:11px;text-transform:uppercase}
-    .rank{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:999px;
-      font-size:12px;font-weight:850;background:rgba(96,165,250,.16)}
-    .pill{display:inline-block;padding:5px 9px;border-radius:999px;font-size:11px;font-weight:800;
-      border:1px solid var(--line)}
-    .green{background:rgba(34,197,94,.12);color:#b9f5c9}
-    .amber{background:rgba(245,158,11,.12);color:#ffd897}
-    .red{background:rgba(239,68,68,.12);color:#ffb4b4}
-    .progress{height:10px;background:rgba(255,255,255,.07);border-radius:999px;overflow:hidden;min-width:120px}
-    .progress > span{display:block;height:100%;background:linear-gradient(90deg,var(--blue),var(--violet))}
-    .list{display:flex;flex-direction:column;gap:10px}
-    .list-item{display:flex;justify-content:space-between;gap:12px;padding:12px;border-radius:14px;
-      background:var(--panel2);border:1px solid var(--line)}
-    .error{margin-bottom:18px;padding:12px 16px;border-radius:14px;background:#7f1d1d}
-    @media (max-width:1000px){.hero,.kpis,.grid{grid-template-columns:1fr}}
-  </style>
-</head>
-<body>
-  <div class="wrap">
-    <div id="errorBox" class="error" style="display:none"></div>
+<script>
+const CSV_URL = "https://docs.google.com/spreadsheets/d/1RB9rxbcQ5B4RAIuXxymZKD64hRhdsWw1-SuN6GyEG_4/export?format=csv&gid=1907582977";
 
-    <div class="hero">
-      <div class="panel">
-        <div class="badge">Live from Google Sheets</div>
-        <h1>S4 Group Sales Dashboard</h1>
-        <div class="sub">Simple live dashboard wired to your Google Sheet.</div>
-      </div>
-      <div class="panel">
-        <div class="section-title">Quarter pulse</div>
-        <div class="meta" id="quarterPulse">Loading...</div>
-      </div>
-    </div>
+const fmtMoney = n => new Intl.NumberFormat('en-ZA', {
+  style: 'currency', currency: 'ZAR', maximumFractionDigits: 0
+}).format(Number(n || 0));
 
-    <div class="kpis">
-      <div class="panel">
-        <div class="label">Total NFI</div>
-        <div class="value" id="kpiTotal">—</div>
-        <div class="meta" id="kpiTarget">—</div>
-      </div>
-      <div class="panel">
-        <div class="label">Gap to target</div>
-        <div class="value" id="kpiGap">—</div>
-        <div class="meta">Distance still to close</div>
-      </div>
-      <div class="panel">
-        <div class="label">Best performer</div>
-        <div class="value" id="kpiBest">—</div>
-        <div class="meta" id="kpiBestSub">—</div>
-      </div>
-      <div class="panel">
-        <div class="label">Active consultants</div>
-        <div class="value" id="kpiActive">—</div>
-        <div class="meta">Booked NFI so far</div>
-      </div>
-    </div>
+const fmtPct = n => isNaN(n) ? '—' : (n * 100).toFixed(1) + '%';
 
-    <div class="grid">
-      <div class="panel">
-        <div class="section-title">Leaderboard</div>
-        <div class="meta">Sorted by Q1 actual.</div>
-        <div style="overflow:auto;margin-top:14px">
-          <table>
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Consultant</th>
-                <th>Actual</th>
-                <th>Target</th>
-                <th>% Achieved</th>
-                <th>Band</th>
-              </tr>
-            </thead>
-            <tbody id="leaderboardBody"></tbody>
-          </table>
-        </div>
-      </div>
+function clean(v) {
+  if (!v) return 0;
+  let t = String(v).replace(/R|,|\s/g, '');
+  if (t.includes('%')) return parseFloat(t)/100 || 0;
+  return parseFloat(t) || 0;
+}
 
-      <div class="panel">
-        <div class="section-title">Manager watchlist</div>
-        <div class="meta">Biggest gaps to target.</div>
-        <div class="list" id="watchlist" style="margin-top:14px"></div>
-      </div>
-    </div>
-  </div>
+async function loadDashboard() {
+  try {
+    const res = await fetch(CSV_URL + "&t=" + Date.now());
+    const text = await res.text();
 
-  <script>
-    const fmtMoney = n => new Intl.NumberFormat('en-ZA', {
-      style: 'currency', currency: 'ZAR', maximumFractionDigits: 0
-    }).format(Number(n || 0));
+    const rows = text.split('\n').map(r => r.split(','));
 
-    const fmtPct = n => n == null || isNaN(n) ? '—' : `${(Number(n) * 100).toFixed(1)}%`;
-    const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
+    // adjust indexes if needed
+    const data = rows.slice(5, 30).map(r => ({
+      name: r[1],
+      actual: clean(r[7]),
+      target: clean(r[8]),
+      pct: clean(r[9])
+    })).filter(r => r.name);
 
-    function pillClass(band) {
-      if (band === 'Over target' || band === 'On track') return 'green';
-      if (band === 'Build mode') return 'amber';
-      return 'red';
-    }
+    const total = data.reduce((s,r)=>s+r.actual,0);
+    const target = data.reduce((s,r)=>s+r.target,0);
+    const best = [...data].sort((a,b)=>b.pct-a.pct)[0];
 
-    function showError(message) {
-      const box = document.getElementById('errorBox');
-      box.style.display = 'block';
-      box.textContent = message;
-    }
+    document.getElementById('kpiTotal').textContent = fmtMoney(total);
+    document.getElementById('kpiTarget').textContent = fmtMoney(target);
+    document.getElementById('kpiGap').textContent = fmtMoney(target-total);
+    document.getElementById('kpiBest').textContent = best?.name || '—';
+    document.getElementById('kpiBestSub').textContent = fmtPct(best?.pct);
+    document.getElementById('kpiActive').textContent = data.filter(x=>x.actual>0).length;
 
-    async function loadDashboard() {
-      try {
-        const res = await fetch('./s4cloud_sales_kpi_dashboard_v2_data.json?v=' + Date.now(), {
-          cache: 'no-store'
-        });
+    document.getElementById('leaderboardBody').innerHTML =
+      data.sort((a,b)=>b.actual-a.actual).map((r,i)=>`
+        <tr>
+          <td>${i+1}</td>
+          <td>${r.name}</td>
+          <td>${fmtMoney(r.actual)}</td>
+          <td>${fmtMoney(r.target)}</td>
+          <td>${fmtPct(r.pct)}</td>
+          <td>${r.pct>=1?'Over target':r.pct>=0.6?'On track':r.pct>0?'Build':'Start'}</td>
+        </tr>
+      `).join('');
 
-        if (!res.ok) throw new Error(`JSON load failed with status ${res.status}`);
+  } catch (e) {
+    document.body.innerHTML = "Error loading sheet";
+    console.error(e);
+  }
+}
 
-        const data = await res.json();
-        const consultants = Array.isArray(data.consultants) ? data.consultants : [];
-        const summary = data.summary || {};
-
-        const sorted = [...consultants].sort((a, b) => Number(b.actual || 0) - Number(a.actual || 0));
-        const best = [...consultants].sort((a, b) => Number(b.pct || 0) - Number(a.pct || 0))[0];
-
-        document.getElementById('kpiTotal').textContent = fmtMoney(summary.team_actual || 0);
-        document.getElementById('kpiTarget').textContent = `Target ${fmtMoney(summary.team_target || 0)} • ${fmtPct(summary.team_pct || 0)}`;
-        document.getElementById('kpiGap').textContent = fmtMoney(summary.team_gap || 0);
-        document.getElementById('kpiBest').textContent = best ? best.name : '—';
-        document.getElementById('kpiBestSub').textContent = best ? `${fmtPct(best.pct)} • ${fmtMoney(best.actual)}` : '—';
-        document.getElementById('kpiActive').textContent = summary.active_consultants ?? 0;
-        document.getElementById('quarterPulse').textContent =
-          `Team NFI ${fmtMoney(summary.team_actual || 0)} against ${fmtMoney(summary.team_target || 0)} across ${summary.consultant_count || consultants.length} consultants.`;
-
-        document.getElementById('leaderboardBody').innerHTML = sorted.map((r, i) => `
-          <tr>
-            <td><span class="rank">${i + 1}</span></td>
-            <td><strong>${r.name || ''}</strong></td>
-            <td>${fmtMoney(r.actual || 0)}</td>
-            <td>${fmtMoney(r.target || 0)}</td>
-            <td>
-              <div style="display:flex;align-items:center;gap:10px">
-                <div class="progress"><span style="width:${clamp(Number(r.pct || 0) * 100, 0, 100)}%"></span></div>
-                <div>${fmtPct(r.pct)}</div>
-              </div>
-            </td>
-            <td><span class="pill ${pillClass(r.band)}">${r.band || 'Starting blocks'}</span></td>
-          </tr>
-        `).join('');
-
-        const watch = [...consultants]
-          .sort((a, b) => Number(b.gap || 0) - Number(a.gap || 0))
-          .slice(0, 5);
-
-        document.getElementById('watchlist').innerHTML = watch.map(r => `
-          <div class="list-item">
-            <div><strong>${r.name || ''}</strong><div class="meta">${r.band || '—'}</div></div>
-            <div style="text-align:right"><strong>${fmtMoney(r.gap || 0)}</strong><div class="meta">gap</div></div>
-          </div>
-        `).join('');
-      } catch (err) {
-        console.error(err);
-        showError(`Dashboard data failed to load: ${err.message}`);
-      }
-    }
-
-    loadDashboard();
-  </script>
-</body>
-</html>
+loadDashboard();
+</script>
