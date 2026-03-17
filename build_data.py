@@ -4,20 +4,29 @@ import json
 url = "https://docs.google.com/spreadsheets/d/1RB9rxbcQ5B4RAIuXxymZKD64hRhdsWw1-SuN6GyEG_4/export?format=csv&gid=1907582977"
 df = pd.read_csv(url)
 
-df = df.fillna(0)
+df = df.fillna("")
+
+def clean_number(value):
+    if value is None or value == "":
+        return 0.0
+    text = str(value).strip()
+    text = text.replace("R", "").replace(",", "").replace(" ", "")
+    if text == "":
+        return 0.0
+    return float(text)
 
 consultants = []
 
 for i in range(5, 30):
-    name = df.iloc[i, 1]
+    name = str(df.iloc[i, 1]).strip()
     if not name:
         continue
 
     consultants.append({
-        "name": str(name),
-        "actual": float(df.iloc[i, 7] or 0),
-        "target": float(df.iloc[i, 8] or 0),
-        "pct": float(df.iloc[i, 9] or 0)
+        "name": name,
+        "actual": clean_number(df.iloc[i, 7]),
+        "target": clean_number(df.iloc[i, 8]),
+        "pct": clean_number(df.iloc[i, 9])
     })
 
 data = {
