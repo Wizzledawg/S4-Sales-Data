@@ -1,403 +1,236 @@
-<script>
-let DATA = null;
-
-const fmtMoney = n =>
-  new Intl.NumberFormat('en-ZA', {
-    style: 'currency',
-    currency: 'ZAR',
-    maximumFractionDigits: 0
-  }).format(Number(n || 0));
-
-const fmtPct = n =>
-  n == null || isNaN(n) ? '—' : `${(Number(n) * 100).toFixed(1)}%`;
-
-const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
-const byId = id => document.getElementById(id);
-
-function pillClass(band) {
-  if (band === 'Over target' || band === 'On track') return 'green';
-  if (band === 'Build mode') return 'amber';
-  return 'red';
-}
-
-function safeArray(value) {
-  return Array.isArray(value) ? value : [];
-}
-
-function populateFilters() {
-  if (!DATA) return;
-
-  const consultants = safeArray(DATA.consultants);
-
-  const sets = {
-    business: [...new Set(consultants.map(x => x.business).filter(Boolean))],
-    type: [...new Set(consultants.map(x => x.type).filter(Boolean))],
-    band: [...new Set(consultants.map(x => x.band).filter(Boolean))]
-  };
-
-  const configs = [
-    ['businessFilter', sets.business],
-    ['typeFilter', sets.type],
-    ['bandFilter', sets.band]
-  ];
-
-  configs.forEach(([id, values]) => {
-    const select = byId(id);
-    if (!select) return;
-
-    const current = select.value;
-    select.innerHTML = '<option value="all">All</option>';
-
-    values.forEach(v => {
-      const opt = document.createElement('option');
-      opt.value = v;
-      opt.textContent = v;
-      select.appendChild(opt);
-    });
-
-    if ([...select.options].some(o => o.value === current)) {
-      select.value = current;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>S4 Group Dashboard</title>
+  <style>
+    :root{
+      --bg:#08111f;
+      --panel:#0f1a2b;
+      --panel2:#14233a;
+      --line:rgba(255,255,255,.08);
+      --text:#edf4ff;
+      --muted:#9db1d0;
+      --blue:#60a5fa;
+      --violet:#8b5cf6;
+      --green:#22c55e;
+      --amber:#f59e0b;
+      --red:#ef4444;
     }
-  });
-}
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at 100% 0, rgba(96,165,250,.18), transparent 24%),
+        radial-gradient(circle at 0 0, rgba(139,92,246,.16), transparent 18%),
+        var(--bg);
+    }
+    .wrap{max-width:1280px;margin:0 auto;padding:28px}
+    .hero,.kpis,.grid{display:grid;gap:18px}
+    .hero{grid-template-columns:1.5fr .9fr;margin-bottom:18px}
+    .kpis{grid-template-columns:repeat(4,1fr);margin-bottom:18px}
+    .grid{grid-template-columns:1.2fr .8fr}
+    .panel{
+      background:linear-gradient(180deg,rgba(255,255,255,.02),transparent),var(--panel);
+      border:1px solid var(--line);
+      border-radius:22px;
+      padding:18px;
+      box-shadow:0 18px 44px rgba(0,0,0,.24);
+    }
+    .badge{
+      display:inline-flex;align-items:center;gap:8px;padding:7px 11px;border-radius:999px;
+      font-size:12px;font-weight:800;letter-spacing:.04em;
+      background:rgba(96,165,250,.12);border:1px solid rgba(96,165,250,.28);color:#d9e8ff;
+    }
+    h1{margin:10px 0 8px;font-size:32px;letter-spacing:-.04em}
+    .sub,.meta{color:var(--muted);line-height:1.5}
+    .label{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+    .value{font-size:30px;font-weight:850;letter-spacing:-.04em;margin:8px 0 6px}
+    .section-title{margin:0 0 10px;font-size:18px;font-weight:850}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:10px 8px;border-bottom:1px solid var(--line);text-align:left}
+    th{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.12em}
+    .rank{
+      display:inline-grid;place-items:center;width:28px;height:28px;border-radius:999px;
+      font-size:12px;font-weight:850;background:rgba(96,165,250,.16)
+    }
+    .pill{
+      display:inline-block;padding:5px 9px;border-radius:999px;font-size:11px;font-weight:800;
+      border:1px solid var(--line)
+    }
+    .green{background:rgba(34,197,94,.12);color:#b9f5c9}
+    .amber{background:rgba(245,158,11,.12);color:#ffd897}
+    .red{background:rgba(239,68,68,.12);color:#ffb4b4}
+    .progress{height:10px;background:rgba(255,255,255,.07);border-radius:999px;overflow:hidden;min-width:120px}
+    .progress > span{display:block;height:100%;background:linear-gradient(90deg,var(--blue),var(--violet))}
+    .list{display:flex;flex-direction:column;gap:10px}
+    .list-item{
+      display:flex;justify-content:space-between;gap:12px;padding:12px;border-radius:14px;
+      background:var(--panel2);border:1px solid var(--line)
+    }
+    .error{
+      margin-bottom:18px;padding:12px 16px;border-radius:14px;
+      background:#7f1d1d;border:1px solid rgba(255,255,255,.12)
+    }
+    @media (max-width:1000px){
+      .hero,.kpis,.grid{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div id="errorBox" class="error" style="display:none"></div>
 
-function getRows() {
-  if (!DATA) return [];
-
-  const consultants = safeArray(DATA.consultants);
-
-  const q = (byId('searchBox')?.value || '').trim().toLowerCase();
-  const business = byId('businessFilter')?.value || 'all';
-  const type = byId('typeFilter')?.value || 'all';
-  const band = byId('bandFilter')?.value || 'all';
-  const sortBy = byId('sortBy')?.value || 'actual';
-
-  let rows = consultants.filter(r => {
-    const name = String(r.name || '').toLowerCase();
-    const qok = !q || name.includes(q);
-    const bok = business === 'all' || r.business === business;
-    const tok = type === 'all' || r.type === type;
-    const bandok = band === 'all' || r.band === band;
-    return qok && bok && tok && bandok;
-  });
-
-  rows.sort((a, b) => {
-    if (sortBy === 'name') return String(a.name || '').localeCompare(String(b.name || ''));
-    const av = a?.[sortBy] == null ? -999999999 : Number(a[sortBy]);
-    const bv = b?.[sortBy] == null ? -999999999 : Number(b[sortBy]);
-    return bv - av;
-  });
-
-  return rows;
-}
-
-function renderTopline(rows) {
-  if (!DATA) return;
-
-  const summary = DATA.summary || {};
-
-  const total = rows.reduce((s, r) => s + Number(r.actual || 0), 0);
-  const target = rows.reduce((s, r) => s + Number(r.target || 0), 0);
-  const pct = target ? total / target : null;
-  const gap = target - total;
-
-  const best = [...rows]
-    .filter(r => r.pct != null && !isNaN(r.pct))
-    .sort((a, b) => Number(b.pct || 0) - Number(a.pct || 0))[0];
-
-  if (byId('kpiTotal')) byId('kpiTotal').textContent = fmtMoney(total);
-  if (byId('kpiTarget')) byId('kpiTarget').textContent = `Target ${fmtMoney(target)} • ${fmtPct(pct)}`;
-  if (byId('kpiGap')) byId('kpiGap').textContent = fmtMoney(gap);
-  if (byId('kpiBest')) byId('kpiBest').textContent = best ? best.name : '—';
-  if (byId('kpiBestSub')) {
-    byId('kpiBestSub').textContent = best
-      ? `${fmtPct(best.pct)} • ${fmtMoney(best.actual)}`
-      : 'No target data';
-  }
-  if (byId('kpiActive')) byId('kpiActive').textContent = rows.filter(r => Number(r.actual || 0) > 0).length;
-  if (byId('kpiLiveContractors')) byId('kpiLiveContractors').textContent = summary.live_contractors ?? 0;
-  if (byId('kpiLiveGP')) byId('kpiLiveGP').textContent = `${fmtMoney(summary.live_gp_pm || 0)} GP / month`;
-  if (byId('kpiPermCount')) byId('kpiPermCount').textContent = summary.perm_placements ?? 0;
-
-  if (byId('quarterPulse')) {
-    byId('quarterPulse').textContent =
-      `Team NFI ${fmtMoney(summary.team_actual || 0)} against ${fmtMoney(summary.team_target || 0)}. Cloud carries ${fmtMoney(summary.cloud_actual || 0)}, while the live contract book is currently worth ${fmtMoney(summary.live_gp_pm || 0)} GP per month.`;
-  }
-
-  if (byId('teamPctText')) byId('teamPctText').textContent = fmtPct(summary.team_pct || 0);
-  if (byId('teamPctBar')) byId('teamPctBar').style.width = `${clamp((summary.team_pct || 0) * 100, 0, 100)}%`;
-
-  const cloudShare = (summary.team_actual || 0) ? (summary.cloud_actual || 0) / summary.team_actual : 0;
-  const contractShare = (summary.team_actual || 0) ? (summary.contract_actual || 0) / summary.team_actual : 0;
-
-  if (byId('cloudShareText')) byId('cloudShareText').textContent = fmtPct(cloudShare);
-  if (byId('cloudShareBar')) byId('cloudShareBar').style.width = `${clamp(cloudShare * 100, 0, 100)}%`;
-  if (byId('contractShareText')) byId('contractShareText').textContent = fmtPct(contractShare);
-  if (byId('contractShareBar')) byId('contractShareBar').style.width = `${clamp(contractShare * 100, 0, 100)}%`;
-}
-
-function renderLeaderboard(rows) {
-  const el = byId('leaderboardBody');
-  if (!el) return;
-
-  el.innerHTML = rows.map((r, i) => `
-    <tr>
-      <td><span class="rank">${i + 1}</span></td>
-      <td><strong>${r.name || ''}</strong><div class="meta">${r.business || '—'} • ${r.type || '—'}</div></td>
-      <td><span class="pill ${pillClass(r.band)}">${r.band || 'Starting blocks'}</span></td>
-      <td>${fmtMoney(r.actual)}</td>
-      <td>${r.target ? fmtMoney(r.target) : '—'}</td>
-      <td>
-        <div style="display:flex;align-items:center;gap:10px">
-          <div class="progress"><span style="width:${clamp((Number(r.pct || 0) * 100), 0, 100)}%"></span></div>
-          <div>${fmtPct(r.pct)}</div>
-        </div>
-      </td>
-      <td>${Number(r.live_contracts || 0)}</td>
-    </tr>
-  `).join('');
-}
-
-function renderCompareChart(rows) {
-  const el = byId('compareChart');
-  if (!el) return;
-
-  const actuals = {
-    Apr: rows.reduce((s, r) => s + Number(r.apr || 0), 0),
-    May: rows.reduce((s, r) => s + Number(r.may || 0), 0),
-    Jun: rows.reduce((s, r) => s + Number(r.jun || 0), 0),
-  };
-
-  const targets = {
-    Apr: rows.reduce((s, r) => s + Number(r.monthly_target || 0), 0),
-    May: rows.reduce((s, r) => s + Number(r.monthly_target || 0), 0),
-    Jun: rows.reduce((s, r) => s + Number(r.monthly_target || 0), 0),
-  };
-
-  const max = Math.max(...Object.values(actuals), ...Object.values(targets), 1);
-
-  el.innerHTML = ['Apr', 'May', 'Jun'].map(m => {
-    const ah = Math.max(8, (actuals[m] / max) * 220);
-    const th = Math.max(8, (targets[m] / max) * 220);
-
-    return `
-      <div class="col">
-        <div style="display:flex;align-items:flex-end;gap:8px;height:235px">
-          <div class="bar target" style="height:${th}px"><small>${fmtMoney(targets[m])}</small></div>
-          <div class="bar actual" style="height:${ah}px"></div>
-        </div>
-        <div class="meta">${m}</div>
+    <div class="hero">
+      <div class="panel">
+        <div class="badge">Live from Google Sheets</div>
+        <h1>S4 Group Sales Dashboard</h1>
+        <div class="sub">This version reads the JSON generated from your Google Sheet and renders only the essentials: top KPIs, consultant leaderboard, and the biggest target gaps.</div>
       </div>
-    `;
-  }).join('');
-}
-
-function renderCards(rows) {
-  const el = byId('cards');
-  if (!el) return;
-
-  el.innerHTML = rows.map(r => `
-    <div class="mini">
-      <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start">
-        <div>
-          <div style="font-weight:850">${r.name || ''}</div>
-          <div class="small">${r.business || '—'} • ${r.type || '—'}</div>
-        </div>
-        <span class="pill ${pillClass(r.band)}">${r.band || 'Starting blocks'}</span>
+      <div class="panel">
+        <div class="section-title">Quarter pulse</div>
+        <div class="meta" id="quarterPulse">Loading...</div>
       </div>
-      <div style="display:flex;justify-content:space-between;margin-top:12px"><span class="small">Q1 Actual</span><strong>${fmtMoney(r.actual)}</strong></div>
-      <div style="display:flex;justify-content:space-between;margin-top:6px"><span class="small">Target</span><strong>${r.target ? fmtMoney(r.target) : '—'}</strong></div>
-      <div style="display:flex;justify-content:space-between;margin-top:6px"><span class="small">Gap</span><strong>${r.gap != null ? fmtMoney(r.gap) : '—'}</strong></div>
-      <div style="display:flex;justify-content:space-between;margin-top:6px"><span class="small">Live contracts</span><strong>${Number(r.live_contracts || 0)}</strong></div>
-      <div class="progress" style="margin-top:10px"><span style="width:${clamp((Number(r.pct || 0) * 100), 0, 100)}%"></span></div>
     </div>
-  `).join('');
-}
 
-function renderMomentum(rows) {
-  const el = byId('momentumLanes');
-  if (!el) return;
-
-  const best = [...rows]
-    .filter(r => r.pct != null)
-    .sort((a, b) => Number(b.pct || 0) - Number(a.pct || 0))
-    .slice(0, 3);
-
-  const book = [...rows]
-    .sort((a, b) => Number(b.live_contracts || 0) - Number(a.live_contracts || 0))
-    .slice(0, 1);
-
-  const items = [
-    ...best.map((r, i) => ({
-      title: `Top ${i + 1}: ${r.name}`,
-      meta: `${fmtPct(r.pct)} of target`,
-      value: fmtMoney(r.actual)
-    })),
-    ...book.map(r => ({
-      title: `Strongest live book: ${r.name}`,
-      meta: `${Number(r.live_contracts || 0)} active contracts`,
-      value: fmtMoney(r.contract_gp_pm || 0)
-    }))
-  ];
-
-  el.innerHTML = items.map(x => `
-    <div class="list-item">
-      <div><strong>${x.title}</strong><div class="meta">${x.meta}</div></div>
-      <div><strong>${x.value}</strong></div>
+    <div class="kpis">
+      <div class="panel">
+        <div class="label">Total NFI</div>
+        <div class="value" id="kpiTotal">—</div>
+        <div class="meta" id="kpiTarget">—</div>
+      </div>
+      <div class="panel">
+        <div class="label">Gap to target</div>
+        <div class="value" id="kpiGap">—</div>
+        <div class="meta">Distance still to close</div>
+      </div>
+      <div class="panel">
+        <div class="label">Best performer</div>
+        <div class="value" id="kpiBest">—</div>
+        <div class="meta" id="kpiBestSub">—</div>
+      </div>
+      <div class="panel">
+        <div class="label">Active consultants</div>
+        <div class="value" id="kpiActive">—</div>
+        <div class="meta">Booked NFI so far</div>
+      </div>
     </div>
-  `).join('');
-}
 
-function renderBands(rows) {
-  const el = byId('bandSummary');
-  if (!el) return;
-
-  const counts = {};
-  rows.forEach(r => {
-    const band = r.band || 'Starting blocks';
-    counts[band] = (counts[band] || 0) + 1;
-  });
-
-  const order = ['Over target', 'On track', 'Build mode', 'Starting blocks'];
-
-  el.innerHTML = order
-    .filter(k => counts[k])
-    .map(k => `
-      <div class="list-item">
-        <div><span class="pill ${pillClass(k)}">${k}</span></div>
-        <div><strong>${counts[k]}</strong></div>
-      </div>
-    `)
-    .join('');
-}
-
-function renderManagerSplits(rows) {
-  if (!DATA) return;
-
-  const summary = DATA.summary || {};
-  const total = Number(summary.team_actual || 1);
-
-  const setBar = (valId, barId, val) => {
-    if (byId(valId)) byId(valId).textContent = fmtMoney(val);
-    if (byId(barId)) byId(barId).style.width = `${(Number(val || 0) / total) * 100}%`;
-  };
-
-  setBar('cloudVal', 'cloudBar', summary.cloud_actual || 0);
-  setBar('energyVal', 'energyBar', summary.energy_actual || 0);
-  setBar('contractVal', 'contractBar', summary.contract_actual || 0);
-  setBar('permVal', 'permBar', summary.perm_actual || 0);
-
-  if (byId('clientList')) {
-    byId('clientList').innerHTML = safeArray(DATA.topClients).map(c => `
-      <div class="list-item">
-        <div><strong>${c.client || '—'}</strong><div class="meta">Live contract GP / month</div></div>
-        <div><strong>${fmtMoney(c.gp_pm || 0)}</strong></div>
-      </div>
-    `).join('');
-  }
-
-  const worst = [...rows]
-    .filter(r => r.gap != null)
-    .sort((a, b) => Number(b.gap || 0) - Number(a.gap || 0))
-    .slice(0, 5);
-
-  if (byId('watchlist')) {
-    byId('watchlist').innerHTML = worst.map(r => `
-      <div class="list-item">
-        <div><strong>${r.name || ''}</strong><div class="meta">${r.business || '—'} • ${r.type || '—'}</div></div>
-        <div style="text-align:right"><strong>${fmtMoney(r.gap || 0)}</strong><div class="meta">gap</div></div>
-      </div>
-    `).join('');
-  }
-
-  const monthActual = {
-    Apr: rows.reduce((s, r) => s + Number(r.apr || 0), 0),
-    May: rows.reduce((s, r) => s + Number(r.may || 0), 0),
-    Jun: rows.reduce((s, r) => s + Number(r.jun || 0), 0),
-  };
-
-  const max = Math.max(...Object.values(monthActual), 1);
-
-  if (byId('monthChart')) {
-    byId('monthChart').innerHTML = ['Apr', 'May', 'Jun'].map(m => {
-      const h = Math.max(10, (monthActual[m] / max) * 220);
-      return `
-        <div class="col">
-          <div class="bar actual" style="height:${h}px"><small>${fmtMoney(monthActual[m])}</small></div>
-          <div class="meta">${m}</div>
+    <div class="grid">
+      <div class="panel">
+        <div class="section-title">Leaderboard</div>
+        <div class="meta">Sorted by Q1 actual.</div>
+        <div style="overflow:auto;margin-top:14px">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Consultant</th>
+                <th>Actual</th>
+                <th>Target</th>
+                <th>% Achieved</th>
+                <th>Band</th>
+              </tr>
+            </thead>
+            <tbody id="leaderboardBody"></tbody>
+          </table>
         </div>
-      `;
-    }).join('');
-  }
+      </div>
 
-  if (byId('detailBody')) {
-    byId('detailBody').innerHTML = rows.map(r => `
-      <tr>
-        <td><strong>${r.name || ''}</strong></td>
-        <td>${r.business || '—'}</td>
-        <td>${r.type || '—'}</td>
-        <td>${fmtMoney(r.apr)}</td>
-        <td>${fmtMoney(r.may)}</td>
-        <td>${fmtMoney(r.jun)}</td>
-        <td>${r.gap != null ? fmtMoney(r.gap) : '—'}</td>
-        <td>${fmtMoney(r.contract_gp_pm || 0)}</td>
-      </tr>
-    `).join('');
-  }
-}
+      <div class="panel">
+        <div class="section-title">Manager watchlist</div>
+        <div class="meta">Biggest gaps to target.</div>
+        <div class="list" id="watchlist" style="margin-top:14px"></div>
+      </div>
+    </div>
+  </div>
 
-function renderAll() {
-  if (!DATA) return;
-  const rows = getRows();
-  renderTopline(rows);
-  renderLeaderboard(rows);
-  renderCompareChart(rows);
-  renderCards(rows);
-  renderMomentum(rows);
-  renderBands(rows);
-  renderManagerSplits(rows);
-}
+  <script>
+    const fmtMoney = n =>
+      new Intl.NumberFormat('en-ZA', {
+        style: 'currency',
+        currency: 'ZAR',
+        maximumFractionDigits: 0
+      }).format(Number(n || 0));
 
-async function loadData() {
-  try {
-    const response = await fetch('./s4cloud_sales_kpi_dashboard_v2_data.json?v=' + Date.now(), {
-      cache: 'no-store'
-    });
+    const fmtPct = n =>
+      n == null || isNaN(n) ? '—' : `${(Number(n) * 100).toFixed(1)}%`;
 
-    if (!response.ok) {
-      throw new Error(`Failed to load JSON: ${response.status}`);
+    const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
+
+    function pillClass(band) {
+      if (band === 'Over target' || band === 'On track') return 'green';
+      if (band === 'Build mode') return 'amber';
+      return 'red';
     }
 
-    DATA = await response.json();
-    populateFilters();
-    renderAll();
-  } catch (error) {
-    console.error(error);
-    document.body.insertAdjacentHTML(
-      'afterbegin',
-      `<div style="margin:16px;padding:12px 16px;border-radius:12px;background:#7f1d1d;color:#fff;border:1px solid rgba(255,255,255,.15);font-family:Inter,system-ui,sans-serif;">
-        Dashboard data failed to load. Check JSON path or deploy output.
-      </div>`
-    );
-  }
-}
+    function showError(message) {
+      const box = document.getElementById('errorBox');
+      box.style.display = 'block';
+      box.textContent = message;
+    }
 
-['searchBox', 'businessFilter', 'typeFilter', 'bandFilter', 'sortBy'].forEach(id => {
-  const el = byId(id);
-  if (!el) return;
-  el.addEventListener('input', renderAll);
-  el.addEventListener('change', renderAll);
-});
+    async function loadDashboard() {
+      try {
+        const res = await fetch('./s4cloud_sales_kpi_dashboard_v2_data.json?v=' + Date.now(), {
+          cache: 'no-store'
+        });
 
-document.querySelectorAll('.tabbtn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.tabbtn').forEach(x => x.classList.remove('active'));
-    document.querySelectorAll('.tabview').forEach(x => x.classList.remove('active'));
-    btn.classList.add('active');
-    const tab = document.getElementById(`tab-${btn.dataset.tab}`);
-    if (tab) tab.classList.add('active');
-  });
-});
+        if (!res.ok) throw new Error(`JSON load failed with status ${res.status}`);
 
-loadData();
-</script>
+        const data = await res.json();
+        const consultants = Array.isArray(data.consultants) ? data.consultants : [];
+        const summary = data.summary || {};
+
+        const sorted = [...consultants].sort((a, b) => Number(b.actual || 0) - Number(a.actual || 0));
+        const best = [...consultants]
+          .sort((a, b) => Number(b.pct || 0) - Number(a.pct || 0))[0];
+
+        document.getElementById('kpiTotal').textContent = fmtMoney(summary.team_actual || 0);
+        document.getElementById('kpiTarget').textContent = `Target ${fmtMoney(summary.team_target || 0)} • ${fmtPct(summary.team_pct || 0)}`;
+        document.getElementById('kpiGap').textContent = fmtMoney(summary.team_gap || 0);
+        document.getElementById('kpiBest').textContent = best ? best.name : '—';
+        document.getElementById('kpiBestSub').textContent = best ? `${fmtPct(best.pct)} • ${fmtMoney(best.actual)}` : '—';
+        document.getElementById('kpiActive').textContent = summary.active_consultants ?? 0;
+        document.getElementById('quarterPulse').textContent =
+          `Team NFI ${fmtMoney(summary.team_actual || 0)} against ${fmtMoney(summary.team_target || 0)} across ${summary.consultant_count || consultants.length} consultants.`;
+
+        document.getElementById('leaderboardBody').innerHTML = sorted.map((r, i) => `
+          <tr>
+            <td><span class="rank">${i + 1}</span></td>
+            <td><strong>${r.name || ''}</strong></td>
+            <td>${fmtMoney(r.actual || 0)}</td>
+            <td>${fmtMoney(r.target || 0)}</td>
+            <td>
+              <div style="display:flex;align-items:center;gap:10px">
+                <div class="progress"><span style="width:${clamp((Number(r.pct || 0) * 100), 0, 100)}%"></span></div>
+                <div>${fmtPct(r.pct)}</div>
+              </div>
+            </td>
+            <td><span class="pill ${pillClass(r.band)}">${r.band || 'Starting blocks'}</span></td>
+          </tr>
+        `).join('');
+
+        const watch = [...consultants]
+          .sort((a, b) => Number(b.gap || 0) - Number(a.gap || 0))
+          .slice(0, 5);
+
+        document.getElementById('watchlist').innerHTML = watch.map(r => `
+          <div class="list-item">
+            <div><strong>${r.name || ''}</strong><div class="meta">${r.band || '—'}</div></div>
+            <div style="text-align:right"><strong>${fmtMoney(r.gap || 0)}</strong><div class="meta">gap</div></div>
+          </div>
+        `).join('');
+      } catch (err) {
+        console.error(err);
+        showError(`Dashboard data failed to load: ${err.message}`);
+      }
+    }
+
+    loadDashboard();
+  </script>
+</body>
+</html>
