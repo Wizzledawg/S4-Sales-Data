@@ -7,16 +7,20 @@ df = pd.read_csv(url)
 df = df.fillna("")
 
 def clean_number(value):
-    if value is None or value == "":
+    if value is None:
         return 0.0
 
     text = str(value).strip()
+
+    if text in ("", "-", "—", "n/a", "N/A"):
+        return 0.0
+
     text = text.replace("R", "").replace(",", "").replace(" ", "")
 
     is_percent = "%" in text
     text = text.replace("%", "")
 
-    if text == "":
+    if text in ("", "-", "—"):
         return 0.0
 
     number = float(text)
