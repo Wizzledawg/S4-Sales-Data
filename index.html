@@ -289,10 +289,107 @@
     }
 
     async function loadDashboard() {
-      try {
-        if (!CSV_URL || CSV_URL.includes("PASTE_YOUR_PUBLISHED_CSV_URL_HERE")) {
-          throw new Error("CSV URL not set in index.html");
-        }
+  try {
+    const res = await fetch(CSV_URL + "&_t=" + Date.now());
+    const text = await res.text();
+
+    const rows = text.split("\n").map(r => r.split(","));
+
+    console.log("RAW ROWS:", rows);
+
+    // Find header row dynamically (contains "Consultant")
+    const headerIndex = rows.findIndex(r =>
+      r.join("").toLowerCase().includes("consultant")
+    );
+
+    if (headerIndex === -1) {
+      throw new Error("Could not find header row");
+    }
+
+    const dataRows = rows.slice(headerIndex + 1);
+
+    const consultants = dataRows
+      .map(r => {
+        const name = (r[1] || "").trim();
+        if (!name) return null;
+
+        const actual = cleanNumber(r[7]);
+        const target = cleanNumber(r[8]);
+        const pct = target ? actual / target : 0;
+
+        return {
+          name,
+          actual,
+          target,
+          pct,
+          gap: target - actual,
+          band: bandFromPct(pct)
+        };
+      })
+      .filter(Boolean);
+
+    console.log("CONSULTANTS:", consultants);
+
+    if (consultants.length === 0) {
+      throw new Error("No data parsed from sheet");
+    }
+
+    // KPIs
+    const teamActual = consultants.reduce((s, r) => s + r.actual, 0);
+    const teamTarget = consultants.reduce((s, r) => s + r.target, 0);
+    const best = [...consultants].sort((a, b) => b.actual - a.actual)[0];
+    const active = consultants.filter(r => r.actual > 0).length;
+
+    document.getElementById("kpiTotal").textContent = fmtMoney(teamActual);
+    document.getElementById("kpiTarget").textContent =
+      `Target ${fmtMoney(teamTarget)}`;
+    document.getElementById("kpiGap").textContent =
+      fmtMoney(teamTarget - teamActual);
+    document.getElementById("kpiBest").textContent =
+      best ? best.name : "-";
+    document.getElementById("kpiBestSub").textContent =
+      best ? fmtMoney(best.actual) : "-";
+    document.getElementById("kpiActive").textContent = active;
+
+    document.getElementById("quarterPulse").textContent =
+      `${consultants.length} consultants • ${fmtMoney(teamActual)} total`;
+
+    // Leaderboard
+    const sorted = [...consultants].sort((a, b) => b.actual - a.actual);
+
+    document.getElementById("leaderboardBody").innerHTML = sorted.map((r, i) => `
+      <tr>
+        <td>${i + 1}</td>
+        <td>${r.name}</td>
+        <td>${fmtMoney(r.actual)}</td>
+        <td>${fmtMoney(r.target)}</td>
+        <td>${fmtPct(r.pct)}</td>
+        <td>${r.band}</td>
+      </tr>
+    `).join("");
+
+    // Watchlist
+    const watch = [...consultants]
+      .sort((a, b) => b.gap - a.gap)
+      .slice(0, 5);
+
+    document.getElementById("watchlist").innerHTML = watch.map(r => `
+      <div class="list-item">
+        <div>
+          <strong>${r.name}</strong>
+          <div class="small">${r.band}</div>
+        </div>
+        <div>
+          <strong>${fmtMoney(r.gap)}</strong>
+        </div>
+      </div>
+    `).join("");
+
+  } catch (err) {
+    console.error(err);
+    showError("Error loading sheet: " + err.message);
+  }
+}
 
         const res = await fetch(CSV_URL + (CSV_URL.includes("?") ? "&" : "?") + "_t=" + Date.now(), {
           cache: "no-store"
