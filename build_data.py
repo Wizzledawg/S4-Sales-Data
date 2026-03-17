@@ -12,7 +12,7 @@ def clean_number(value):
 
     text = str(value).strip()
 
-    if text in ("", "-", "—", "n/a", "N/A"):
+    if text in ("", "-", "—", "n/a", "N/A", "#DIV/0!", "#N/A", "#VALUE!", "#REF!"):
         return 0.0
 
     text = text.replace("R", "").replace(",", "").replace(" ", "")
