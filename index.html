@@ -1,458 +1,185 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>S4 Cloud Sales KPI Dashboard V2</title>
-<style>
-:root{
-  --bg:#08111f;
-  --panel:#0f1a2b;
-  --panel2:#14233a;
-  --soft:#1a2d49;
-  --line:rgba(255,255,255,.08);
-  --text:#edf4ff;
-  --muted:#9db1d0;
-  --blue:#60a5fa;
-  --violet:#8b5cf6;
-  --green:#22c55e;
-  --amber:#f59e0b;
-  --red:#ef4444;
-}
-*{box-sizing:border-box}
-body{
-  margin:0;
-  font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-  color:var(--text);
-  background:
-    radial-gradient(circle at 100% 0, rgba(96,165,250,.18), transparent 24%),
-    radial-gradient(circle at 0 0, rgba(139,92,246,.16), transparent 18%),
-    var(--bg);
-}
-.wrap{max-width:1480px;margin:0 auto;padding:28px}
-.hero{display:grid;grid-template-columns:1.5fr .9fr;gap:18px;margin-bottom:18px}
-.panel{
-  background:linear-gradient(180deg,rgba(255,255,255,.02),transparent),var(--panel);
-  border:1px solid var(--line);
-  border-radius:24px;
-  padding:18px;
-  box-shadow:0 18px 44px rgba(0,0,0,.24);
-}
-.badge{
-  display:inline-flex;align-items:center;gap:8px;padding:7px 11px;border-radius:999px;
-  font-size:12px;font-weight:800;letter-spacing:.04em;
-  background:rgba(96,165,250,.12);border:1px solid rgba(96,165,250,.28);color:#d9e8ff;
-}
-h1{margin:10px 0 8px;font-size:32px;letter-spacing:-.04em}
-.sub{color:var(--muted);line-height:1.5}
-.kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;margin-bottom:18px}
-.kpi,.mini{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:15px}
-.label{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
-.value{font-size:29px;font-weight:850;letter-spacing:-.04em;margin:8px 0 6px}
-.small{font-size:13px;color:var(--muted)}
-.green{color:var(--green)} .amber{color:var(--amber)} .red{color:var(--red)}
-.controls{display:grid;grid-template-columns:1.2fr .8fr .8fr .9fr .8fr;gap:12px;margin-bottom:18px}
-.control{
-  background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:12px 14px
-}
-.control label{display:block;color:var(--muted);font-size:12px;margin-bottom:7px}
-.control input,.control select{
-  width:100%;background:#0a1424;color:var(--text);border:1px solid rgba(255,255,255,.08);
-  border-radius:10px;padding:10px 12px
-}
-.tabs{display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap}
-.tabbtn{
-  background:var(--panel);border:1px solid var(--line);color:var(--text);padding:10px 14px;border-radius:999px;
-  cursor:pointer;font-weight:700
-}
-.tabbtn.active{background:rgba(96,165,250,.14);border-color:rgba(96,165,250,.3)}
-.tabview{display:none}
-.tabview.active{display:block}
-.grid-2{display:grid;grid-template-columns:1.2fr .8fr;gap:18px;margin-bottom:18px}
-.grid-3{display:grid;grid-template-columns:1.15fr .95fr .9fr;gap:18px;margin-bottom:18px}
-.section-title{margin:0 0 8px;font-size:18px;font-weight:850}
-.meta{color:var(--muted);font-size:13px}
-table{width:100%;border-collapse:collapse}
-th,td{padding:10px 8px;border-bottom:1px solid var(--line);text-align:left}
-th{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.12em}
-tr:hover td{background:rgba(255,255,255,.02)}
-.rank{
-  display:inline-grid;place-items:center;width:28px;height:28px;border-radius:999px;
-  font-size:12px;font-weight:850;background:rgba(96,165,250,.16)
-}
-.progress{height:10px;background:rgba(255,255,255,.07);border-radius:999px;overflow:hidden;min-width:120px}
-.progress > span{display:block;height:100%;background:linear-gradient(90deg,var(--blue),var(--violet))}
-.bars .row{margin-bottom:12px}
-.bars .track{height:14px;background:rgba(255,255,255,.07);border-radius:999px;overflow:hidden;margin-top:6px}
-.bars .track > span{display:block;height:100%;background:linear-gradient(90deg,var(--blue),var(--violet))}
-.month-chart,.compare-chart{height:290px;display:flex;align-items:flex-end;gap:18px;padding:10px 8px 2px}
-.col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:10px;height:100%}
-.bar{width:100%;max-width:86px;border-radius:16px 16px 8px 8px;position:relative;min-height:6px}
-.bar.actual{background:linear-gradient(180deg,var(--violet),var(--blue))}
-.bar.target{background:rgba(255,255,255,.18)}
-.bar small{position:absolute;top:-24px;left:50%;transform:translateX(-50%);font-size:11px;font-weight:800;white-space:nowrap}
-.legend{display:flex;gap:16px;color:var(--muted);font-size:12px;margin-top:10px}
-.dot{width:10px;height:10px;border-radius:999px;display:inline-block;margin-right:6px}
-.card-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
-.pill{display:inline-block;padding:5px 9px;border-radius:999px;font-size:11px;font-weight:800;border:1px solid var(--line)}
-.pill.green{background:rgba(34,197,94,.12);color:#b9f5c9}
-.pill.amber{background:rgba(245,158,11,.12);color:#ffd897}
-.pill.red{background:rgba(239,68,68,.12);color:#ffb4b4}
-.pill.blue{background:rgba(96,165,250,.12);color:#cfe3ff}
-.list{display:flex;flex-direction:column;gap:10px}
-.list-item{
-  display:flex;justify-content:space-between;gap:12px;padding:12px;border-radius:14px;
-  background:var(--panel2);border:1px solid var(--line)
-}
-.footer{color:var(--muted);font-size:12px;margin-top:18px}
-@media (max-width:1180px){
-  .hero,.grid-2,.grid-3,.kpis,.controls,.card-grid{grid-template-columns:1fr 1fr}
-}
-@media (max-width:760px){
-  .hero,.grid-2,.grid-3,.kpis,.controls,.card-grid{grid-template-columns:1fr}
-  .wrap{padding:16px}
-  h1{font-size:26px}
-}
-</style>
-</head>
-<body>
-<div class="wrap">
-  <div class="hero">
-    <div class="panel">
-      <div class="badge">V2 hybrid sales cockpit</div>
-      <h1>S4 Cloud KPI Dashboard</h1>
-      <div class="sub">This version leans harder into team rhythm. It keeps the scoreboard swagger from V1, then adds monthly target comparisons, performance bands, a contract-book pulse, and a cleaner manager lens.</div>
-    </div>
-    <div class="panel">
-      <div class="section-title">Quarter pulse</div>
-      <div class="meta" id="quarterPulse"></div>
-      <div class="bars" style="margin-top:16px">
-        <div class="row">
-          <div style="display:flex;justify-content:space-between"><span>Team to target</span><span id="teamPctText"></span></div>
-          <div class="track"><span id="teamPctBar" style="width:0%"></span></div>
-        </div>
-        <div class="row">
-          <div style="display:flex;justify-content:space-between"><span>Cloud share of team</span><span id="cloudShareText"></span></div>
-          <div class="track"><span id="cloudShareBar" style="width:0%"></span></div>
-        </div>
-        <div class="row">
-          <div style="display:flex;justify-content:space-between"><span>Contract share of team</span><span id="contractShareText"></span></div>
-          <div class="track"><span id="contractShareBar" style="width:0%"></span></div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="kpis">
-    <div class="kpi">
-      <div class="label">Total NFI</div>
-      <div class="value" id="kpiTotal"></div>
-      <div class="small" id="kpiTarget"></div>
-    </div>
-    <div class="kpi">
-      <div class="label">Gap to target</div>
-      <div class="value red" id="kpiGap"></div>
-      <div class="small">Distance still to close</div>
-    </div>
-    <div class="kpi">
-      <div class="label">Best performer</div>
-      <div class="value" id="kpiBest"></div>
-      <div class="small" id="kpiBestSub"></div>
-    </div>
-    <div class="kpi">
-      <div class="label">Active consultants</div>
-      <div class="value" id="kpiActive"></div>
-      <div class="small">Booked NFI so far</div>
-    </div>
-    <div class="kpi">
-      <div class="label">Live contractors</div>
-      <div class="value" id="kpiLiveContractors"></div>
-      <div class="small" id="kpiLiveGP"></div>
-    </div>
-    <div class="kpi">
-      <div class="label">Perm placements</div>
-      <div class="value" id="kpiPermCount"></div>
-      <div class="small">From perm data tab</div>
-    </div>
-  </div>
-
-  <div class="controls">
-    <div class="control">
-      <label>Search consultant</label>
-      <input id="searchBox" type="text" placeholder="Type a name..." />
-    </div>
-    <div class="control">
-      <label>Business</label>
-      <select id="businessFilter"><option value="all">All</option></select>
-    </div>
-    <div class="control">
-      <label>Type</label>
-      <select id="typeFilter"><option value="all">All</option></select>
-    </div>
-    <div class="control">
-      <label>Performance band</label>
-      <select id="bandFilter"><option value="all">All</option></select>
-    </div>
-    <div class="control">
-      <label>Sort</label>
-      <select id="sortBy">
-        <option value="actual">Q1 Actual</option>
-        <option value="pct">% Achieved</option>
-        <option value="gap">Gap to Target</option>
-        <option value="live_contracts">Live Contracts</option>
-        <option value="name">Name</option>
-      </select>
-    </div>
-  </div>
-
-  <div class="tabs">
-    <button class="tabbtn active" data-tab="team">Team view</button>
-    <button class="tabbtn" data-tab="manager">Manager view</button>
-  </div>
-
-  <section class="tabview active" id="tab-team">
-    <div class="grid-2">
-      <div class="panel">
-        <div class="section-title">Leaderboard</div>
-        <div class="meta">Scoreboard first, but with enough context to avoid chest-beating without clues.</div>
-        <div style="overflow:auto;margin-top:14px">
-          <table>
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Consultant</th>
-                <th>Band</th>
-                <th>Q1 Actual</th>
-                <th>Target</th>
-                <th>% Achieved</th>
-                <th>Live Book</th>
-              </tr>
-            </thead>
-            <tbody id="leaderboardBody"></tbody>
-          </table>
-        </div>
-      </div>
-      <div class="panel">
-        <div class="section-title">Actual vs monthly target</div>
-        <div class="meta">Equal monthly pacing based on quarterly target. Not gospel, but very useful as a rhythm check.</div>
-        <div class="compare-chart" id="compareChart"></div>
-        <div class="legend">
-          <div><span class="dot" style="background:rgba(255,255,255,.18)"></span>Target</div>
-          <div><span class="dot" style="background:linear-gradient(180deg,var(--violet),var(--blue))"></span>Actual</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="grid-3">
-      <div class="panel">
-        <div class="section-title">Consultant snapshots</div>
-        <div class="meta">Quick-glance cards for the floor. Think morning huddle fuel.</div>
-        <div class="card-grid" id="cards" style="margin-top:14px"></div>
-      </div>
-      <div class="panel">
-        <div class="section-title">Momentum lanes</div>
-        <div class="meta">Top three by achievement, plus strongest live contract book.</div>
-        <div id="momentumLanes" class="list" style="margin-top:14px"></div>
-      </div>
-      <div class="panel">
-        <div class="section-title">Performance bands</div>
-        <div class="meta">A softer spotlight than a siren, but it still tells the truth.</div>
-        <div id="bandSummary" class="list" style="margin-top:14px"></div>
-      </div>
-    </div>
-  </section>
-
-  <section class="tabview" id="tab-manager">
-    <div class="grid-3">
-      <div class="panel">
-        <div class="section-title">Business split</div>
-        <div class="meta">Where the engine is making its noise.</div>
-        <div class="bars" style="margin-top:16px">
-          <div class="row">
-            <div style="display:flex;justify-content:space-between"><span>Smart4 Cloud</span><span id="cloudVal"></span></div>
-            <div class="track"><span id="cloudBar" style="width:0%"></span></div>
-          </div>
-          <div class="row">
-            <div style="display:flex;justify-content:space-between"><span>Smart4 Energy</span><span id="energyVal"></span></div>
-            <div class="track"><span id="energyBar" style="width:0%"></span></div>
-          </div>
-          <div class="row">
-            <div style="display:flex;justify-content:space-between"><span>Contract</span><span id="contractVal"></span></div>
-            <div class="track"><span id="contractBar" style="width:0%"></span></div>
-          </div>
-          <div class="row">
-            <div style="display:flex;justify-content:space-between"><span>Perm</span><span id="permVal"></span></div>
-            <div class="track"><span id="permBar" style="width:0%"></span></div>
-          </div>
-        </div>
-      </div>
-      <div class="panel">
-        <div class="section-title">Top clients by GP / month</div>
-        <div class="meta">From the live contract book.</div>
-        <div id="clientList" class="list" style="margin-top:14px"></div>
-      </div>
-      <div class="panel">
-        <div class="section-title">Manager watchlist</div>
-        <div class="meta">Biggest target gaps among the visible selection.</div>
-        <div id="watchlist" class="list" style="margin-top:14px"></div>
-      </div>
-    </div>
-
-    <div class="grid-2">
-      <div class="panel">
-        <div class="section-title">Monthly team trend</div>
-        <div class="meta">The quarter on one clean skyline.</div>
-        <div class="month-chart" id="monthChart"></div>
-      </div>
-      <div class="panel">
-        <div class="section-title">Consultant detail table</div>
-        <div class="meta">Useful when you need names, numbers, and no interpretive dance.</div>
-        <div style="overflow:auto;margin-top:14px">
-          <table>
-            <thead>
-              <tr>
-                <th>Consultant</th>
-                <th>Business</th>
-                <th>Type</th>
-                <th>Apr</th>
-                <th>May</th>
-                <th>Jun</th>
-                <th>Gap</th>
-                <th>GP/PM</th>
-              </tr>
-            </thead>
-            <tbody id="detailBody"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <div class="footer">
-    Source workbook: S4Cloud Tracker FY27.xlsx. V2 combines the Consultant NFI League, live contract book, and perm data tabs into a single HTML dashboard. Monthly target pacing is derived by dividing the quarterly target equally across Apr, May, and Jun.
-  </div>
-</div>
-
 <script>
-const DATA = {"summary": {"team_actual": 1029055.0, "team_target": 8310875.0, "team_pct": 0.12382029569690316, "team_gap": 7281820.0, "energy_actual": 231300.0, "cloud_actual": 797755.0, "perm_actual": 148500.0, "contract_actual": 880555.0, "active_consultants": 9, "consultant_count": 23, "avg_nfi_per_consultant": 44741.52173913043, "monthly_actuals": {"Apr": 444685.0, "May": 296185.0, "Jun": 288185.0}, "monthly_target": {"Apr": 2770291.6666666665, "May": 2770291.6666666665, "Jun": 2770291.6666666665}, "live_contractors": 20, "live_gp_pm": 295840.0, "perm_placements": 1}, "consultants": [{"name": "Lee Bishop", "type": "PERM", "business": "S4 Energy", "apr": 0, "may": 0, "jun": 0, "actual": 0, "target": 900000.0, "pct": 0.0, "monthly_target": 300000.0, "gap": 900000.0, "active": false, "live_contracts": 0, "contract_gp_pm": 0, "client_count": 0, "apr_vs_target": 0.0, "may_vs_target": 0.0, "jun_vs_target": 0.0, "band": "Starting blocks"}, {"name": "Warren Beder", "type": "PERM", "business": "S4 Energy", "apr": 74250.0, "may": 0, "jun": 0, "actual": 74250.0, "target": 900000.0, "pct": 0.0825, "monthly_target": 300000.0, "gap": 825750.0, "active": true, "live_contracts": 0, "contract_gp_pm": 0, "client_count": 0, "apr_vs_target": 0.2475, "may_vs_target": 0.0, "jun_vs_target": 0.0, "band": "Build mode"}, {"name": "Lufuno Orji*", "type": "PERM", "business": "S4 Energy", "apr": 74250.0, "may": 0, "jun": 0, "actual": 74250.0, "target": 525000.0, "pct": 0.14142857142857143, "monthly_target": 175000.0, "gap": 450750.0, "active": true, "live_contracts": 0, "contract_gp_pm": 0, "client_count": 0, "apr_vs_target": 0.42428571428571427, "may_vs_target": 0.0, "jun_vs_target": 0.0, "band": "Build mode"}, {"name": "Kyla Morgan", "type": "PERM", "business": "S4 Energy", "apr": 12000.0, "may": 12000.0, "jun": 12000.0, "actual": 36000.0, "target": 510000.0, "pct": 0.07058823529411765, "monthly_target": 170000.0, "gap": 474000.0, "active": true, "live_contracts": 1, "contract_gp_pm": 12000.0, "client_count": 1, "apr_vs_target": 0.07058823529411765, "may_vs_target": 0.07058823529411765, "jun_vs_target": 0.07058823529411765, "band": "Build mode"}, {"name": "Zara Kavalieratos", "type": "PERM", "business": "S4 Energy", "apr": 0, "may": 0, "jun": 0, "actual": 0, "target": 450000.0, "pct": 0.0, "monthly_target": 150000.0, "gap": 450000.0, "active": false, "live_contracts": 0, "contract_gp_pm": 0, "client_count": 0, "apr_vs_target": 0.0, "may_vs_target": 0.0, "jun_vs_target": 0.0, "band": "Starting blocks"}, {"name": "JP Roos", "type": "PERM", "business": "S4 Energy", "apr": 0, "may": 0, "jun": 0, "actual": 0, "target": 450000.0, "pct": 0.0, "monthly_target": 150000.0, "gap": 450000.0, "active": false, "live_contracts": 0, "contract_gp_pm": 0, "client_count": 0, "apr_vs_target": 0.0, "may_vs_target": 0.0, "jun_vs_target": 0.0, "band": "Starting blocks"}, {"name": "Matthew Taylor", "type": "PERM", "business": "S4 Energy", "apr": 0, "may": 0, "jun": 0, "actual": 0, "target": 450000.0, "pct": 0.0, "monthly_target": 150000.0, "gap": 450000.0, "active": false, "live_contracts": 0, "contract_gp_pm": 0, "client_count": 0, "apr_vs_target": 0.0, "may_vs_target": 0.0, "jun_vs_target": 0.0, "band": "Starting blocks"}, {"name": "Nicole Samuels*", "type": "PERM", "business": "S4 Energy", "apr": 15600.0, "may": 15600.0, "jun": 15600.0, "actual": 46800.0, "target": 648000.0, "pct": 0.07222222222222222, "monthly_target": 216000.0, "gap": 601200.0, "active": true, "live_contracts": 0, "contract_gp_pm": 0, "client_count": 0, "apr_vs_target": 0.07222222222222222, "may_vs_target": 0.07222222222222222, "jun_vs_target": 0.07222222222222222, "band": "Build mode"}, {"name": "Robyn Andreka", "type": "PERM", "business": "S4 Energy", "apr": 0, "may": 0, "jun": 0, "actual": 0, "target": 405000.0, "pct": 0.0, "monthly_target": 135000.0, "gap": 405000.0, "active": false, "live_contracts": 0, "contract_gp_pm": 0, "client_count": 0, "apr_vs_target": 0.0, "may_vs_target": 0.0, "jun_vs_target": 0.0, "band": "Starting blocks"}, {"name": "Nikkita Elliot", "type": "PERM", "business": "S4 Energy", "apr": 0, "may": 0, "jun": 0, "actual": 0, "target": 50000.0, "pct": 0.0, "monthly_target": 16666.666666666668, "gap": 50000.0, "active": false, "live_contracts": 0, "contract_gp_pm": 0, "client_count": 0, "apr_vs_target": 0.0, "may_vs_target": 0.0, "jun_vs_target": 0.0, "band": "Starting blocks"}, {"name": "Mae Alwahi", "type": "PERM", "business": "S4 Energy", "apr": 0, "may": 0, "jun": 0, "actual": 0, "target": 150000.0, "pct": 0.0, "monthly_target": 50000.0, "gap": 150000.0, "active": false, "live_contracts": 0, "contract_gp_pm": 0, "client_count": 0, "apr_vs_target": 0.0, "may_vs_target": 0.0, "jun_vs_target": 0.0, "band": "Starting blocks"}, {"name": "Chris Butcher", "type": "PERM", "business": "S4 Energy", "apr": 0, "may": 0, "jun": 0, "actual": 0, "target": 300000.0, "pct": 0.0, "monthly_target": 100000.0, "gap": 300000.0, "active": false, "live_contracts": 0, "contract_gp_pm": 0, "client_count": 0, "apr_vs_target": 0.0, "may_vs_target": 0.0, "jun_vs_target": 0.0, "band": "Starting blocks"}, {"name": "Lara JVR", "type": "PERM", "business": "S4 Energy", "apr": 0, "may": 0, "jun": 0, "actual": 0, "target": 300000.0, "pct": 0.0, "monthly_target": 100000.0, "gap": 300000.0, "active": false, "live_contracts": 0, "contract_gp_pm": 0, "client_count": 0, "apr_vs_target": 0.0, "may_vs_target": 0.0, "jun_vs_target": 0.0, "band": "Starting blocks"}, {"name": "Zoe W", "type": "PERM", "business": "S4 Energy", "apr": 0, "may": 0, "jun": 0, "actual": 0, "target": 0.0, "pct": null, "monthly_target": null, "gap": null, "active": false, "live_contracts": 0, "contract_gp_pm": 0, "client_count": 0, "apr_vs_target": null, "may_vs_target": null, "jun_vs_target": null, "band": "No target"}, {"name": "Josh Wegelar", "type": "PERM", "business": "S4 Energy", "apr": 0, "may": 0, "jun": 0, "actual": 0, "target": 0.0, "pct": null, "monthly_target": null, "gap": null, "active": false, "live_contracts": 0, "contract_gp_pm": 0, "client_count": 0, "apr_vs_target": null, "may_vs_target": null, "jun_vs_target": null, "band": "No target"}, {"name": "Nina Jacobs", "type": "PERM", "business": "S4 Energy", "apr": 0, "may": 0, "jun": 0, "actual": 0, "target": 0.0, "pct": null, "monthly_target": null, "gap": null, "active": false, "live_contracts": 0, "contract_gp_pm": 0, "client_count": 0, "apr_vs_target": null, "may_vs_target": null, "jun_vs_target": null, "band": "No target"}, {"name": "Steph Payne", "type": "PERM", "business": "S4 Cloud", "apr": 0, "may": 0, "jun": 0, "actual": 0, "target": 375000.0, "pct": 0.0, "monthly_target": 125000.0, "gap": 375000.0, "active": false, "live_contracts": 0, "contract_gp_pm": 0, "client_count": 0, "apr_vs_target": 0.0, "may_vs_target": 0.0, "jun_vs_target": 0.0, "band": "Starting blocks"}, {"name": "Rodney Govender", "type": "TEMP", "business": "S4 Cloud", "apr": 29200.0, "may": 29200.0, "jun": 25200.0, "actual": 83600.0, "target": 340000.0, "pct": 0.24588235294117647, "monthly_target": 113333.33333333333, "gap": 256400.0, "active": true, "live_contracts": 0, "contract_gp_pm": 0, "client_count": 0, "apr_vs_target": 0.2576470588235294, "may_vs_target": 0.2576470588235294, "jun_vs_target": 0.2223529411764706, "band": "Build mode"}, {"name": "Mandy Duvenage", "type": "TEMP", "business": "S4 Cloud", "apr": 96880.0, "may": 96880.0, "jun": 92880.0, "actual": 286640.0, "target": 277875.0, "pct": 1.0315429599640127, "monthly_target": 92625.0, "gap": -8765.0, "active": true, "live_contracts": 15, "contract_gp_pm": 193415.0, "client_count": 3, "apr_vs_target": 1.0459379217273954, "may_vs_target": 1.0459379217273954, "jun_vs_target": 1.002753036437247, "band": "Over target"}, {"name": "Jesse van der Poel", "type": "TEMP", "business": "S4 Cloud", "apr": 20800.0, "may": 20800.0, "jun": 20800.0, "actual": 62400.0, "target": 150000.0, "pct": 0.416, "monthly_target": 50000.0, "gap": 87600.0, "active": true, "live_contracts": 0, "contract_gp_pm": 0, "client_count": 0, "apr_vs_target": 0.416, "may_vs_target": 0.416, "jun_vs_target": 0.416, "band": "Build mode"}, {"name": "Sheldon Botha", "type": "TEMP", "business": "S4 Cloud", "apr": 46880.0, "may": 46880.0, "jun": 46880.0, "actual": 140640.0, "target": 350000.0, "pct": 0.4018285714285714, "monthly_target": 116666.66666666667, "gap": 209360.0, "active": true, "live_contracts": 0, "contract_gp_pm": 0, "client_count": 0, "apr_vs_target": 0.4018285714285714, "may_vs_target": 0.4018285714285714, "jun_vs_target": 0.4018285714285714, "band": "Build mode"}, {"name": "Tom Harding", "type": "TEMP", "business": "S4 Cloud", "apr": 74825.0, "may": 74825.0, "jun": 74825.0, "actual": 224475.0, "target": 440000.0, "pct": 0.5101704545454545, "monthly_target": 146666.66666666666, "gap": 215525.0, "active": true, "live_contracts": 2, "contract_gp_pm": 74825.0, "client_count": 1, "apr_vs_target": 0.5101704545454546, "may_vs_target": 0.5101704545454546, "jun_vs_target": 0.5101704545454546, "band": "Build mode"}, {"name": "Max Goodger", "type": "TEMP", "business": "S4 Cloud", "apr": 0, "may": 0, "jun": 0, "actual": 0, "target": 340000.0, "pct": 0.0, "monthly_target": 113333.33333333333, "gap": 340000.0, "active": false, "live_contracts": 0, "contract_gp_pm": 0, "client_count": 0, "apr_vs_target": 0.0, "may_vs_target": 0.0, "jun_vs_target": 0.0, "band": "Starting blocks"}], "contractorBook": [{"status": "Live", "nbv_month": "September", "nbv_value": 96000.0, "client": "Momentum (MHG)", "candidate": "Rex Schelling", "role": "Agile Coach", "consultant": "Mandy Duvenage", "resourcer": "Sheldon Botha", "start_date": "2025-03-31 00:00:00", "end_date": "2026-03-30 00:00:00", "currency": "ZAR", "hourly_rate": 570.0, "hourly_margin": 100.0, "margin_pct": 0.17543859649122806, "zar_margin_pd": 710.0, "zar_forecast_pw": 3550.0, "gp_pm": 15975.0}, {"status": "Live", "nbv_month": "April", "nbv_value": 172800.0, "client": "Momentum (MHG)", "candidate": "Preshantin Moodley", "role": "Intermediate Scrum Master", "consultant": "Mandy Duvenage", "resourcer": "Sheldon Botha", "start_date": "2025-05-30 00:00:00", "end_date": "2026-05-14 00:00:00", "currency": "ZAR", "hourly_rate": 360.0, "hourly_margin": 90.0, "margin_pct": 0.2, "zar_margin_pd": 721.0, "zar_forecast_pw": 3605.0, "gp_pm": 14400.0}, {"status": "Live", "nbv_month": "April", "nbv_value": 192000.0, "client": "Momentum (MHG)", "candidate": "Christoff Lombard", "role": "UI Frontend Developer", "consultant": "Mandy Duvenage", "resourcer": "Jesse van der Poel", "start_date": "2025-06-02 00:00:00", "end_date": "2026-06-01 00:00:00", "currency": "ZAR", "hourly_rate": 360.0, "hourly_margin": 100.0, "margin_pct": 0.2, "zar_margin_pd": 801.0, "zar_forecast_pw": 4005.0, "gp_pm": 16000.0}, {"status": "Live", "nbv_month": "July", "nbv_value": 172800.0, "client": "Momentum (MHG)", "candidate": "Deyendran Lalalam", "role": "Scrum Master", "consultant": "Mandy Duvenage", "resourcer": "Sheldon Botha", "start_date": "2025-07-16 00:00:00", "end_date": "2026-07-15 00:00:00", "currency": "ZAR", "hourly_rate": 370.0, "hourly_margin": 90.0, "margin_pct": "19,57%", "zar_margin_pd": 721.0, "zar_forecast_pw": 3605.0, "gp_pm": 14400.0}, {"status": "Live", "nbv_month": "July", "nbv_value": 172800.0, "client": "Momentum (MHG)", "candidate": "Christopher Bickell", "role": "Scrum Master", "consultant": "Mandy Duvenage", "resourcer": "Jesse van der Poel", "start_date": "2025-08-01 00:00:00", "end_date": "2026-07-31 00:00:00", "currency": "ZAR", "hourly_rate": 370.0, "hourly_margin": 90.0, "margin_pct": "19,57%", "zar_margin_pd": 721.0, "zar_forecast_pw": 3605.0, "gp_pm": 14400.0}, {"status": "Live", "nbv_month": "July", "nbv_value": 120960.0, "client": "Nexio", "candidate": "Sizwe Thabethe", "role": "Service Technician", "consultant": "Mandy Duvenage", "resourcer": "Sheldon Botha", "start_date": "2025-08-01 00:00:00", "end_date": "2026-07-31 00:00:00", "currency": "ZAR", "hourly_rate": 137.0, "hourly_margin": 63.0, "margin_pct": "31,5%", "zar_margin_pd": 505.0, "zar_forecast_pw": 2525.0, "gp_pm": 10080.0}, {"status": "Live", "nbv_month": "July", "nbv_value": 120960.0, "client": "Nexio", "candidate": "Brandon Zimri", "role": "Service Technician", "consultant": "Mandy Duvenage", "resourcer": "Sheldon Botha", "start_date": "2025-07-14 00:00:00", "end_date": "2026-07-13 00:00:00", "currency": "ZAR", "hourly_rate": 137.0, "hourly_margin": 63.0, "margin_pct": "31,5%", "zar_margin_pd": 505.0, "zar_forecast_pw": 2525.0, "gp_pm": 10080.0}, {"status": "Live", "nbv_month": "September", "nbv_value": 140160.0, "client": "Nexio", "candidate": "Innocent Rapula Molaodi", "role": "Assurance Engineer Level 2", "consultant": "Mandy Duvenage", "resourcer": "Rod G", "start_date": "2025-09-15 00:00:00", "end_date": "2025-11-30 00:00:00", "currency": "ZAR", "hourly_rate": 137.0, "hourly_margin": 73.0, "margin_pct": 33.33, "zar_margin_pd": 519.1111111111111, "zar_forecast_pw": 2595.5555555555557, "gp_pm": 11680.0}, {"status": "Live", "nbv_month": "September", "nbv_value": 116800.0, "client": "Decision Inc.", "candidate": "Veloshinie Naidoo", "role": "Dynamics BC Consultant", "consultant": "Mandy Duvenage", "resourcer": "Rod G", "start_date": "22nd Sept 2025", "end_date": "30th April 2026", "currency": "ZAR", "hourly_rate": null, "hourly_margin": null, "margin_pct": null, "zar_margin_pd": 711.1111111111111, "zar_forecast_pw": 3555.5555555555557, "gp_pm": 16000.0}, {"status": "Live", "nbv_month": "February", "nbv_value": 211200.0, "client": "Momentum (MHG)", "candidate": "Chanelle Alben", "role": "Scrum Master", "consultant": "Mandy Duvenage", "resourcer": "Sheldon Botha", "start_date": "2026-03-02 00:00:00", "end_date": "2027-03-01 00:00:00", "currency": "ZAR", "hourly_rate": 470.0, "hourly_margin": 110.0, "margin_pct": 0.1896, "zar_margin_pd": 782.2222222222223, "zar_forecast_pw": 3911.1111111111113, "gp_pm": 17600.0}, {"status": "Live", "nbv_month": "February", "nbv_value": 134400.0, "client": "Momentum (MHG)", "candidate": "Siyanda Dlephu", "role": "Test Analyst", "consultant": "Mandy Duvenage", "resourcer": "Rod G", "start_date": "2026-04-01 00:00:00", "end_date": "2027-03-01 00:00:00", "currency": "ZAR", "hourly_rate": 350.0, "hourly_margin": 70.0, "margin_pct": 0.1896, "zar_margin_pd": 497.7777777777777, "zar_forecast_pw": 2488.8888888888887, "gp_pm": 11200.0}, {"status": "Live", "nbv_month": "March", "nbv_value": 134400.0, "client": "Momentum (MHG)", "candidate": "Khomotso Mokobodi", "role": "Test Analyst", "consultant": "Mandy Duvenage", "resourcer": "Rod G", "start_date": "2026-04-01 00:00:00", "end_date": "2027-03-31 00:00:00", "currency": "ZAR", "hourly_rate": 290.0, "hourly_margin": 70.0, "margin_pct": 0.2413793103448276, "zar_margin_pd": 497.7777777777777, "zar_forecast_pw": 2488.8888888888887, "gp_pm": 11200.0}, {"status": "Live", "nbv_month": "March", "nbv_value": 134400.0, "client": "Momentum (MHG)", "candidate": "Aviwe Mngcotane", "role": "Test Analyst", "consultant": "Mandy Duvenage", "resourcer": "Sheldon Botha", "start_date": "2026-04-01 00:00:00", "end_date": "2027-03-31 00:00:00", "currency": "ZAR", "hourly_rate": null, "hourly_margin": 70.0, "margin_pct": "#DIV/0!", "zar_margin_pd": 497.7777777777777, "zar_forecast_pw": 2488.8888888888887, "gp_pm": 11200.0}, {"status": "Live", "nbv_month": "March", "nbv_value": 16000.0, "client": "Decision Inc.", "candidate": "Bernice Langman", "role": "Operations Assistant", "consultant": "Mandy Duvenage", "resourcer": "Rod G", "start_date": "2026-02-26 00:00:00", "end_date": "2027-05-31 00:00:00", "currency": "ZAR", "hourly_rate": 90.0, "hourly_margin": 11.0, "margin_pct": "26%%", "zar_margin_pd": 355.55555555555554, "zar_forecast_pw": 1777.7777777777778, "gp_pm": 8000.0}, {"status": "Live", "nbv_month": null, "nbv_value": 0, "client": "Cox", "candidate": "Timothy Hewitt", "role": null, "consultant": "Tom Harding", "resourcer": null, "start_date": "2025-08-01 00:00:00", "end_date": "2026-06-01 00:00:00", "currency": "USD", "hourly_rate": 80.0, "hourly_margin": 17.0, "margin_pct": "20%%", "zar_margin_pd": 2047.6, "zar_forecast_pw": 10238.0, "gp_pm": 45425.0}, {"status": "Live", "nbv_month": null, "nbv_value": 0, "client": "Cox", "candidate": "Wes Etheridge", "role": null, "consultant": "Tom Harding", "resourcer": null, "start_date": "2025-08-01 00:00:00", "end_date": "2026-06-01 00:00:00", "currency": "USD", "hourly_rate": null, "hourly_margin": null, "margin_pct": "#DIV/0!", "zar_margin_pd": 1668.8220000000001, "zar_forecast_pw": 8344.11, "gp_pm": 29400.0}, {"status": "Live", "nbv_month": "March", "nbv_value": 134400.0, "client": "Momentum (MHG)", "candidate": "Thulfiq Brink", "role": "Test Analyst", "consultant": "Mandy Duvenage", "resourcer": "Jesse van der Poel", "start_date": "2026-04-01 00:00:00", "end_date": "2027-03-31 00:00:00", "currency": 310, "hourly_rate": 70.0, "hourly_margin": null, "margin_pct": 0, "zar_margin_pd": 497.7777777777777, "zar_forecast_pw": 2488.8888888888887, "gp_pm": 11200.0}, {"status": "Live", "nbv_month": "October", "nbv_value": 86400.0, "client": "Siemens", "candidate": "Yethu Dlamini", "role": "Communications Specialist", "consultant": "Nicole Samuels", "resourcer": null, "start_date": "2025-11-03 00:00:00", "end_date": "2026-10-31 00:00:00", "currency": null, "hourly_rate": null, "hourly_margin": null, "margin_pct": "#DIV/0!", "zar_margin_pd": 320.0, "zar_forecast_pw": 1600.0, "gp_pm": 7200.0}, {"status": "Live", "nbv_month": "November", "nbv_value": 100800.0, "client": "Siemens", "candidate": "Siyabonga Zama", "role": "Hub Accountant", "consultant": "Nicole Samuels", "resourcer": null, "start_date": "2025-12-01 00:00:00", "end_date": "2028-12-01 00:00:00", "currency": null, "hourly_rate": null, "hourly_margin": null, "margin_pct": "#DIV/0!", "zar_margin_pd": 373.33333333333337, "zar_forecast_pw": 1866.6666666666667, "gp_pm": 8400.0}, {"status": "Live", "nbv_month": "February", "nbv_value": 150000.0, "client": "DS CPA Corp.", "candidate": "Olamide Ashade", "role": "CPA", "consultant": "Kyla Morgan", "resourcer": null, "start_date": "2026-03-09 00:00:00", "end_date": null, "currency": "USD", "hourly_rate": null, "hourly_margin": null, "margin_pct": "#DIV/0!", "zar_margin_pd": 533.3333333333333, "zar_forecast_pw": 2666.6666666666665, "gp_pm": 12000.0}], "topClients": [{"client": "Momentum (MHG)", "gp_pm": 137575.0}, {"client": "Cox", "gp_pm": 74825.0}, {"client": "Nexio", "gp_pm": 31840.0}, {"client": "Decision Inc.", "gp_pm": 24000.0}, {"client": "Siemens", "gp_pm": 15600.0}, {"client": "DS CPA Corp.", "gp_pm": 12000.0}], "permPlacements": [{"value": 148500.0, "client": "Multotech", "candidate": "Amukelani Mashave", "invoice_month": "April", "start_month": "April", "region": "South Africa", "business_unit": "ENERGY", "consultant": "Warren B"}, {"value": 0, "client": null, "candidate": null, "invoice_month": "#REF!", "start_month": "#REF!", "region": "#REF!", "business_unit": "#REF!", "consultant": null}, {"value": 0, "client": null, "candidate": null, "invoice_month": "#REF!", "start_month": "#REF!", "region": "#REF!", "business_unit": "#REF!", "consultant": null}, {"value": 0, "client": null, "candidate": null, "invoice_month": "#REF!", "start_month": "#REF!", "region": "#REF!", "business_unit": "#REF!", "consultant": null}, {"value": 0, "client": null, "candidate": null, "invoice_month": "#REF!", "start_month": "#REF!", "region": null, "business_unit": null, "consultant": null}, {"value": 0, "client": null, "candidate": null, "invoice_month": "#REF!", "start_month": "#REF!", "region": null, "business_unit": null, "consultant": null}, {"value": 0, "client": null, "candidate": null, "invoice_month": "#REF!", "start_month": "#REF!", "region": null, "business_unit": null, "consultant": null}, {"value": 0, "client": null, "candidate": null, "invoice_month": "#REF!", "start_month": "#REF!", "region": null, "business_unit": null, "consultant": null}, {"value": 0, "client": null, "candidate": null, "invoice_month": "#REF!", "start_month": "#REF!", "region": null, "business_unit": null, "consultant": null}, {"value": 0, "client": null, "candidate": null, "invoice_month": "#REF!", "start_month": "#REF!", "region": null, "business_unit": null, "consultant": null}, {"value": 0, "client": null, "candidate": null, "invoice_month": "#REF!", "start_month": "#REF!", "region": null, "business_unit": null, "consultant": null}], "generated_at": "2026-03-17T12:15:05"};
+let DATA = null;
 
-const fmtMoney = n => new Intl.NumberFormat('en-ZA',{style:'currency',currency:'ZAR',maximumFractionDigits:0}).format(n||0);
-const fmtPct = n => (n == null || isNaN(n)) ? '—' : `${(n*100).toFixed(1)}%`;
-const clamp = (n,min,max) => Math.max(min, Math.min(max, n));
+const fmtMoney = n =>
+  new Intl.NumberFormat('en-ZA', {
+    style: 'currency',
+    currency: 'ZAR',
+    maximumFractionDigits: 0
+  }).format(Number(n || 0));
+
+const fmtPct = n =>
+  n == null || isNaN(n) ? '—' : `${(Number(n) * 100).toFixed(1)}%`;
+
+const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
 const byId = id => document.getElementById(id);
 
-function pillClass(band){
+function pillClass(band) {
   if (band === 'Over target' || band === 'On track') return 'green';
   if (band === 'Build mode') return 'amber';
   return 'red';
 }
 
-function populateFilters(){
+function safeArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function populateFilters() {
+  if (!DATA) return;
+
+  const consultants = safeArray(DATA.consultants);
+
   const sets = {
-    business:[...new Set(DATA.consultants.map(x => x.business).filter(Boolean))],
-    type:[...new Set(DATA.consultants.map(x => x.type).filter(Boolean))],
-    band:[...new Set(DATA.consultants.map(x => x.band).filter(Boolean))]
+    business: [...new Set(consultants.map(x => x.business).filter(Boolean))],
+    type: [...new Set(consultants.map(x => x.type).filter(Boolean))],
+    band: [...new Set(consultants.map(x => x.band).filter(Boolean))]
   };
-  const maps = [['businessFilter',sets.business],['typeFilter',sets.type],['bandFilter',sets.band]];
-  maps.forEach(([id,vals]) => {
-    vals.forEach(v => {
-      const opt=document.createElement('option');
-      opt.value=v; opt.textContent=v; byId(id).appendChild(opt);
+
+  const configs = [
+    ['businessFilter', sets.business],
+    ['typeFilter', sets.type],
+    ['bandFilter', sets.band]
+  ];
+
+  configs.forEach(([id, values]) => {
+    const select = byId(id);
+    if (!select) return;
+
+    const current = select.value;
+    select.innerHTML = '<option value="all">All</option>';
+
+    values.forEach(v => {
+      const opt = document.createElement('option');
+      opt.value = v;
+      opt.textContent = v;
+      select.appendChild(opt);
     });
+
+    if ([...select.options].some(o => o.value === current)) {
+      select.value = current;
+    }
   });
 }
 
-function getRows(){
-  const q = byId('searchBox').value.trim().toLowerCase();
-  const business = byId('businessFilter').value;
-  const type = byId('typeFilter').value;
-  const band = byId('bandFilter').value;
-  const sortBy = byId('sortBy').value;
+function getRows() {
+  if (!DATA) return [];
 
-  let rows = DATA.consultants.filter(r => {
-    const qok = !q || r.name.toLowerCase().includes(q);
+  const consultants = safeArray(DATA.consultants);
+
+  const q = (byId('searchBox')?.value || '').trim().toLowerCase();
+  const business = byId('businessFilter')?.value || 'all';
+  const type = byId('typeFilter')?.value || 'all';
+  const band = byId('bandFilter')?.value || 'all';
+  const sortBy = byId('sortBy')?.value || 'actual';
+
+  let rows = consultants.filter(r => {
+    const name = String(r.name || '').toLowerCase();
+    const qok = !q || name.includes(q);
     const bok = business === 'all' || r.business === business;
     const tok = type === 'all' || r.type === type;
     const bandok = band === 'all' || r.band === band;
     return qok && bok && tok && bandok;
   });
 
-  rows.sort((a,b) => {
-    if (sortBy === 'name') return a.name.localeCompare(b.name);
-    const av = (a[sortBy] == null ? -999999999 : a[sortBy]);
-    const bv = (b[sortBy] == null ? -999999999 : b[sortBy]);
+  rows.sort((a, b) => {
+    if (sortBy === 'name') return String(a.name || '').localeCompare(String(b.name || ''));
+    const av = a?.[sortBy] == null ? -999999999 : Number(a[sortBy]);
+    const bv = b?.[sortBy] == null ? -999999999 : Number(b[sortBy]);
     return bv - av;
   });
+
   return rows;
 }
 
-function renderTopline(rows){
-  const total = rows.reduce((s,r)=>s+(r.actual||0),0);
-  const target = rows.reduce((s,r)=>s+(r.target||0),0);
-  const pct = target ? total/target : null;
+function renderTopline(rows) {
+  if (!DATA) return;
+
+  const summary = DATA.summary || {};
+
+  const total = rows.reduce((s, r) => s + Number(r.actual || 0), 0);
+  const target = rows.reduce((s, r) => s + Number(r.target || 0), 0);
+  const pct = target ? total / target : null;
   const gap = target - total;
-  const best = [...rows].filter(r => r.pct != null && !isNaN(r.pct)).sort((a,b)=>(b.pct||0)-(a.pct||0))[0];
 
-  byId('kpiTotal').textContent = fmtMoney(total);
-  byId('kpiTarget').textContent = `Target ${fmtMoney(target)} • ${fmtPct(pct)}`;
-  byId('kpiGap').textContent = fmtMoney(gap);
-  byId('kpiBest').textContent = best ? best.name : '—';
-  byId('kpiBestSub').textContent = best ? `${fmtPct(best.pct)} • ${fmtMoney(best.actual)}` : 'No target data';
-  byId('kpiActive').textContent = rows.filter(r => (r.actual||0) > 0).length;
-  byId('kpiLiveContractors').textContent = DATA.summary.live_contractors;
-  byId('kpiLiveGP').textContent = `${fmtMoney(DATA.summary.live_gp_pm)} GP / month`;
-  byId('kpiPermCount').textContent = DATA.summary.perm_placements;
+  const best = [...rows]
+    .filter(r => r.pct != null && !isNaN(r.pct))
+    .sort((a, b) => Number(b.pct || 0) - Number(a.pct || 0))[0];
 
-  byId('quarterPulse').textContent =
-    `Team NFI ${fmtMoney(DATA.summary.team_actual)} against ${fmtMoney(DATA.summary.team_target)}. Cloud carries ${fmtMoney(DATA.summary.cloud_actual)}, while the live contract book is currently worth ${fmtMoney(DATA.summary.live_gp_pm)} GP per month.`;
+  if (byId('kpiTotal')) byId('kpiTotal').textContent = fmtMoney(total);
+  if (byId('kpiTarget')) byId('kpiTarget').textContent = `Target ${fmtMoney(target)} • ${fmtPct(pct)}`;
+  if (byId('kpiGap')) byId('kpiGap').textContent = fmtMoney(gap);
+  if (byId('kpiBest')) byId('kpiBest').textContent = best ? best.name : '—';
+  if (byId('kpiBestSub')) {
+    byId('kpiBestSub').textContent = best
+      ? `${fmtPct(best.pct)} • ${fmtMoney(best.actual)}`
+      : 'No target data';
+  }
+  if (byId('kpiActive')) byId('kpiActive').textContent = rows.filter(r => Number(r.actual || 0) > 0).length;
+  if (byId('kpiLiveContractors')) byId('kpiLiveContractors').textContent = summary.live_contractors ?? 0;
+  if (byId('kpiLiveGP')) byId('kpiLiveGP').textContent = `${fmtMoney(summary.live_gp_pm || 0)} GP / month`;
+  if (byId('kpiPermCount')) byId('kpiPermCount').textContent = summary.perm_placements ?? 0;
 
-  byId('teamPctText').textContent = fmtPct(DATA.summary.team_pct);
-  byId('teamPctBar').style.width = `${clamp((DATA.summary.team_pct||0)*100,0,100)}%`;
+  if (byId('quarterPulse')) {
+    byId('quarterPulse').textContent =
+      `Team NFI ${fmtMoney(summary.team_actual || 0)} against ${fmtMoney(summary.team_target || 0)}. Cloud carries ${fmtMoney(summary.cloud_actual || 0)}, while the live contract book is currently worth ${fmtMoney(summary.live_gp_pm || 0)} GP per month.`;
+  }
 
-  const cloudShare = DATA.summary.team_actual ? DATA.summary.cloud_actual / DATA.summary.team_actual : 0;
-  const contractShare = DATA.summary.team_actual ? DATA.summary.contract_actual / DATA.summary.team_actual : 0;
-  byId('cloudShareText').textContent = fmtPct(cloudShare);
-  byId('cloudShareBar').style.width = `${clamp(cloudShare*100,0,100)}%`;
-  byId('contractShareText').textContent = fmtPct(contractShare);
-  byId('contractShareBar').style.width = `${clamp(contractShare*100,0,100)}%`;
+  if (byId('teamPctText')) byId('teamPctText').textContent = fmtPct(summary.team_pct || 0);
+  if (byId('teamPctBar')) byId('teamPctBar').style.width = `${clamp((summary.team_pct || 0) * 100, 0, 100)}%`;
+
+  const cloudShare = (summary.team_actual || 0) ? (summary.cloud_actual || 0) / summary.team_actual : 0;
+  const contractShare = (summary.team_actual || 0) ? (summary.contract_actual || 0) / summary.team_actual : 0;
+
+  if (byId('cloudShareText')) byId('cloudShareText').textContent = fmtPct(cloudShare);
+  if (byId('cloudShareBar')) byId('cloudShareBar').style.width = `${clamp(cloudShare * 100, 0, 100)}%`;
+  if (byId('contractShareText')) byId('contractShareText').textContent = fmtPct(contractShare);
+  if (byId('contractShareBar')) byId('contractShareBar').style.width = `${clamp(contractShare * 100, 0, 100)}%`;
 }
 
-function renderLeaderboard(rows){
+function renderLeaderboard(rows) {
   const el = byId('leaderboardBody');
-  el.innerHTML = rows.map((r,i)=>`
+  if (!el) return;
+
+  el.innerHTML = rows.map((r, i) => `
     <tr>
-      <td><span class="rank">${i+1}</span></td>
-      <td><strong>${r.name}</strong><div class="meta">${r.business} • ${r.type}</div></td>
-      <td><span class="pill ${pillClass(r.band)}">${r.band}</span></td>
+      <td><span class="rank">${i + 1}</span></td>
+      <td><strong>${r.name || ''}</strong><div class="meta">${r.business || '—'} • ${r.type || '—'}</div></td>
+      <td><span class="pill ${pillClass(r.band)}">${r.band || 'Starting blocks'}</span></td>
       <td>${fmtMoney(r.actual)}</td>
       <td>${r.target ? fmtMoney(r.target) : '—'}</td>
       <td>
         <div style="display:flex;align-items:center;gap:10px">
-          <div class="progress"><span style="width:${clamp((r.pct||0)*100,0,100)}%"></span></div>
+          <div class="progress"><span style="width:${clamp((Number(r.pct || 0) * 100), 0, 100)}%"></span></div>
           <div>${fmtPct(r.pct)}</div>
         </div>
       </td>
-      <td>${r.live_contracts || 0}</td>
+      <td>${Number(r.live_contracts || 0)}</td>
     </tr>
   `).join('');
 }
 
-function renderCompareChart(rows){
-  const actuals = {
-    Apr: rows.reduce((s,r)=>s+(r.apr||0),0),
-    May: rows.reduce((s,r)=>s+(r.may||0),0),
-    Jun: rows.reduce((s,r)=>s+(r.jun||0),0),
-  };
-  const targets = {
-    Apr: rows.reduce((s,r)=>s+((r.monthly_target)||0),0),
-    May: rows.reduce((s,r)=>s+((r.monthly_target)||0),0),
-    Jun: rows.reduce((s,r)=>s+((r.monthly_target)||0),0),
-  };
-  const max = Math.max(...Object.values(actuals), ...Object.values(targets), 1);
+function renderCompareChart(rows) {
   const el = byId('compareChart');
-  el.innerHTML = ['Apr','May','Jun'].map(m => {
-    const ah = Math.max(8, (actuals[m]/max) * 220);
-    const th = Math.max(8, (targets[m]/max) * 220);
+  if (!el) return;
+
+  const actuals = {
+    Apr: rows.reduce((s, r) => s + Number(r.apr || 0), 0),
+    May: rows.reduce((s, r) => s + Number(r.may || 0), 0),
+    Jun: rows.reduce((s, r) => s + Number(r.jun || 0), 0),
+  };
+
+  const targets = {
+    Apr: rows.reduce((s, r) => s + Number(r.monthly_target || 0), 0),
+    May: rows.reduce((s, r) => s + Number(r.monthly_target || 0), 0),
+    Jun: rows.reduce((s, r) => s + Number(r.monthly_target || 0), 0),
+  };
+
+  const max = Math.max(...Object.values(actuals), ...Object.values(targets), 1);
+
+  el.innerHTML = ['Apr', 'May', 'Jun'].map(m => {
+    const ah = Math.max(8, (actuals[m] / max) * 220);
+    const th = Math.max(8, (targets[m] / max) * 220);
+
     return `
       <div class="col">
         <div style="display:flex;align-items:flex-end;gap:8px;height:235px">
@@ -465,34 +192,55 @@ function renderCompareChart(rows){
   }).join('');
 }
 
-function renderCards(rows){
+function renderCards(rows) {
   const el = byId('cards');
+  if (!el) return;
+
   el.innerHTML = rows.map(r => `
     <div class="mini">
       <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start">
         <div>
-          <div style="font-weight:850">${r.name}</div>
-          <div class="small">${r.business} • ${r.type}</div>
+          <div style="font-weight:850">${r.name || ''}</div>
+          <div class="small">${r.business || '—'} • ${r.type || '—'}</div>
         </div>
-        <span class="pill ${pillClass(r.band)}">${r.band}</span>
+        <span class="pill ${pillClass(r.band)}">${r.band || 'Starting blocks'}</span>
       </div>
       <div style="display:flex;justify-content:space-between;margin-top:12px"><span class="small">Q1 Actual</span><strong>${fmtMoney(r.actual)}</strong></div>
       <div style="display:flex;justify-content:space-between;margin-top:6px"><span class="small">Target</span><strong>${r.target ? fmtMoney(r.target) : '—'}</strong></div>
       <div style="display:flex;justify-content:space-between;margin-top:6px"><span class="small">Gap</span><strong>${r.gap != null ? fmtMoney(r.gap) : '—'}</strong></div>
-      <div style="display:flex;justify-content:space-between;margin-top:6px"><span class="small">Live contracts</span><strong>${r.live_contracts || 0}</strong></div>
-      <div class="progress" style="margin-top:10px"><span style="width:${clamp((r.pct||0)*100,0,100)}%"></span></div>
+      <div style="display:flex;justify-content:space-between;margin-top:6px"><span class="small">Live contracts</span><strong>${Number(r.live_contracts || 0)}</strong></div>
+      <div class="progress" style="margin-top:10px"><span style="width:${clamp((Number(r.pct || 0) * 100), 0, 100)}%"></span></div>
     </div>
   `).join('');
 }
 
-function renderMomentum(rows){
-  const best = [...rows].filter(r => r.pct != null).sort((a,b)=>(b.pct||0)-(a.pct||0)).slice(0,3);
-  const book = [...rows].sort((a,b)=>(b.live_contracts||0)-(a.live_contracts||0)).slice(0,1);
+function renderMomentum(rows) {
+  const el = byId('momentumLanes');
+  if (!el) return;
+
+  const best = [...rows]
+    .filter(r => r.pct != null)
+    .sort((a, b) => Number(b.pct || 0) - Number(a.pct || 0))
+    .slice(0, 3);
+
+  const book = [...rows]
+    .sort((a, b) => Number(b.live_contracts || 0) - Number(a.live_contracts || 0))
+    .slice(0, 1);
+
   const items = [
-    ...best.map((r,i)=>({title:`Top ${i+1}: ${r.name}`, meta:`${fmtPct(r.pct)} of target`, value:fmtMoney(r.actual)})),
-    ...book.map(r=>({title:`Strongest live book: ${r.name}`, meta:`${r.live_contracts} active contracts`, value:fmtMoney(r.contract_gp_pm || 0)}))
+    ...best.map((r, i) => ({
+      title: `Top ${i + 1}: ${r.name}`,
+      meta: `${fmtPct(r.pct)} of target`,
+      value: fmtMoney(r.actual)
+    })),
+    ...book.map(r => ({
+      title: `Strongest live book: ${r.name}`,
+      meta: `${Number(r.live_contracts || 0)} active contracts`,
+      value: fmtMoney(r.contract_gp_pm || 0)
+    }))
   ];
-  byId('momentumLanes').innerHTML = items.map(x => `
+
+  el.innerHTML = items.map(x => `
     <div class="list-item">
       <div><strong>${x.title}</strong><div class="meta">${x.meta}</div></div>
       <div><strong>${x.value}</strong></div>
@@ -500,75 +248,106 @@ function renderMomentum(rows){
   `).join('');
 }
 
-function renderBands(rows){
+function renderBands(rows) {
+  const el = byId('bandSummary');
+  if (!el) return;
+
   const counts = {};
-  rows.forEach(r => counts[r.band] = (counts[r.band] || 0) + 1);
-  const order = ['Over target','On track','Build mode','Starting blocks'];
-  byId('bandSummary').innerHTML = order.filter(k => counts[k]).map(k => `
-    <div class="list-item">
-      <div><span class="pill ${pillClass(k)}">${k}</span></div>
-      <div><strong>${counts[k]}</strong></div>
-    </div>
-  `).join('');
+  rows.forEach(r => {
+    const band = r.band || 'Starting blocks';
+    counts[band] = (counts[band] || 0) + 1;
+  });
+
+  const order = ['Over target', 'On track', 'Build mode', 'Starting blocks'];
+
+  el.innerHTML = order
+    .filter(k => counts[k])
+    .map(k => `
+      <div class="list-item">
+        <div><span class="pill ${pillClass(k)}">${k}</span></div>
+        <div><strong>${counts[k]}</strong></div>
+      </div>
+    `)
+    .join('');
 }
 
-function renderManagerSplits(rows){
-  const total = DATA.summary.team_actual || 1;
+function renderManagerSplits(rows) {
+  if (!DATA) return;
+
+  const summary = DATA.summary || {};
+  const total = Number(summary.team_actual || 1);
+
   const setBar = (valId, barId, val) => {
-    byId(valId).textContent = fmtMoney(val);
-    byId(barId).style.width = `${(val/total)*100}%`;
+    if (byId(valId)) byId(valId).textContent = fmtMoney(val);
+    if (byId(barId)) byId(barId).style.width = `${(Number(val || 0) / total) * 100}%`;
   };
-  setBar('cloudVal','cloudBar',DATA.summary.cloud_actual);
-  setBar('energyVal','energyBar',DATA.summary.energy_actual);
-  setBar('contractVal','contractBar',DATA.summary.contract_actual);
-  setBar('permVal','permBar',DATA.summary.perm_actual);
 
-  byId('clientList').innerHTML = DATA.topClients.map(c => `
-    <div class="list-item">
-      <div><strong>${c.client}</strong><div class="meta">Live contract GP / month</div></div>
-      <div><strong>${fmtMoney(c.gp_pm)}</strong></div>
-    </div>
-  `).join('');
+  setBar('cloudVal', 'cloudBar', summary.cloud_actual || 0);
+  setBar('energyVal', 'energyBar', summary.energy_actual || 0);
+  setBar('contractVal', 'contractBar', summary.contract_actual || 0);
+  setBar('permVal', 'permBar', summary.perm_actual || 0);
 
-  const worst = [...rows].filter(r => r.gap != null).sort((a,b)=>(b.gap||0)-(a.gap||0)).slice(0,5);
-  byId('watchlist').innerHTML = worst.map(r => `
-    <div class="list-item">
-      <div><strong>${r.name}</strong><div class="meta">${r.business} • ${r.type}</div></div>
-      <div style="text-align:right"><strong>${fmtMoney(r.gap)}</strong><div class="meta">gap</div></div>
-    </div>
-  `).join('');
+  if (byId('clientList')) {
+    byId('clientList').innerHTML = safeArray(DATA.topClients).map(c => `
+      <div class="list-item">
+        <div><strong>${c.client || '—'}</strong><div class="meta">Live contract GP / month</div></div>
+        <div><strong>${fmtMoney(c.gp_pm || 0)}</strong></div>
+      </div>
+    `).join('');
+  }
+
+  const worst = [...rows]
+    .filter(r => r.gap != null)
+    .sort((a, b) => Number(b.gap || 0) - Number(a.gap || 0))
+    .slice(0, 5);
+
+  if (byId('watchlist')) {
+    byId('watchlist').innerHTML = worst.map(r => `
+      <div class="list-item">
+        <div><strong>${r.name || ''}</strong><div class="meta">${r.business || '—'} • ${r.type || '—'}</div></div>
+        <div style="text-align:right"><strong>${fmtMoney(r.gap || 0)}</strong><div class="meta">gap</div></div>
+      </div>
+    `).join('');
+  }
 
   const monthActual = {
-    Apr: rows.reduce((s,r)=>s+(r.apr||0),0),
-    May: rows.reduce((s,r)=>s+(r.may||0),0),
-    Jun: rows.reduce((s,r)=>s+(r.jun||0),0),
+    Apr: rows.reduce((s, r) => s + Number(r.apr || 0), 0),
+    May: rows.reduce((s, r) => s + Number(r.may || 0), 0),
+    Jun: rows.reduce((s, r) => s + Number(r.jun || 0), 0),
   };
-  const max = Math.max(...Object.values(monthActual),1);
-  byId('monthChart').innerHTML = ['Apr','May','Jun'].map(m => {
-    const h = Math.max(10, (monthActual[m]/max)*220);
-    return `
-      <div class="col">
-        <div class="bar actual" style="height:${h}px"><small>${fmtMoney(monthActual[m])}</small></div>
-        <div class="meta">${m}</div>
-      </div>
-    `;
-  }).join('');
 
-  byId('detailBody').innerHTML = rows.map(r => `
-    <tr>
-      <td><strong>${r.name}</strong></td>
-      <td>${r.business}</td>
-      <td>${r.type}</td>
-      <td>${fmtMoney(r.apr)}</td>
-      <td>${fmtMoney(r.may)}</td>
-      <td>${fmtMoney(r.jun)}</td>
-      <td>${r.gap != null ? fmtMoney(r.gap) : '—'}</td>
-      <td>${fmtMoney(r.contract_gp_pm || 0)}</td>
-    </tr>
-  `).join('');
+  const max = Math.max(...Object.values(monthActual), 1);
+
+  if (byId('monthChart')) {
+    byId('monthChart').innerHTML = ['Apr', 'May', 'Jun'].map(m => {
+      const h = Math.max(10, (monthActual[m] / max) * 220);
+      return `
+        <div class="col">
+          <div class="bar actual" style="height:${h}px"><small>${fmtMoney(monthActual[m])}</small></div>
+          <div class="meta">${m}</div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  if (byId('detailBody')) {
+    byId('detailBody').innerHTML = rows.map(r => `
+      <tr>
+        <td><strong>${r.name || ''}</strong></td>
+        <td>${r.business || '—'}</td>
+        <td>${r.type || '—'}</td>
+        <td>${fmtMoney(r.apr)}</td>
+        <td>${fmtMoney(r.may)}</td>
+        <td>${fmtMoney(r.jun)}</td>
+        <td>${r.gap != null ? fmtMoney(r.gap) : '—'}</td>
+        <td>${fmtMoney(r.contract_gp_pm || 0)}</td>
+      </tr>
+    `).join('');
+  }
 }
 
-function renderAll(){
+function renderAll() {
+  if (!DATA) return;
   const rows = getRows();
   renderTopline(rows);
   renderLeaderboard(rows);
@@ -579,12 +358,35 @@ function renderAll(){
   renderManagerSplits(rows);
 }
 
-populateFilters();
-renderAll();
+async function loadData() {
+  try {
+    const response = await fetch('./s4cloud_sales_kpi_dashboard_v2_data.json?v=' + Date.now(), {
+      cache: 'no-store'
+    });
 
-['searchBox','businessFilter','typeFilter','bandFilter','sortBy'].forEach(id => {
-  byId(id).addEventListener('input', renderAll);
-  byId(id).addEventListener('change', renderAll);
+    if (!response.ok) {
+      throw new Error(`Failed to load JSON: ${response.status}`);
+    }
+
+    DATA = await response.json();
+    populateFilters();
+    renderAll();
+  } catch (error) {
+    console.error(error);
+    document.body.insertAdjacentHTML(
+      'afterbegin',
+      `<div style="margin:16px;padding:12px 16px;border-radius:12px;background:#7f1d1d;color:#fff;border:1px solid rgba(255,255,255,.15);font-family:Inter,system-ui,sans-serif;">
+        Dashboard data failed to load. Check JSON path or deploy output.
+      </div>`
+    );
+  }
+}
+
+['searchBox', 'businessFilter', 'typeFilter', 'bandFilter', 'sortBy'].forEach(id => {
+  const el = byId(id);
+  if (!el) return;
+  el.addEventListener('input', renderAll);
+  el.addEventListener('change', renderAll);
 });
 
 document.querySelectorAll('.tabbtn').forEach(btn => {
@@ -592,9 +394,10 @@ document.querySelectorAll('.tabbtn').forEach(btn => {
     document.querySelectorAll('.tabbtn').forEach(x => x.classList.remove('active'));
     document.querySelectorAll('.tabview').forEach(x => x.classList.remove('active'));
     btn.classList.add('active');
-    document.getElementById(`tab-${btn.dataset.tab}`).classList.add('active');
+    const tab = document.getElementById(`tab-${btn.dataset.tab}`);
+    if (tab) tab.classList.add('active');
   });
 });
+
+loadData();
 </script>
-</body>
-</html>
