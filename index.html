@@ -18,7 +18,9 @@
       --amber:#f59e0b;
       --red:#ef4444;
     }
+
     *{box-sizing:border-box}
+
     body{
       margin:0;
       font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
@@ -28,11 +30,32 @@
         radial-gradient(circle at 0 0, rgba(139,92,246,.16), transparent 18%),
         var(--bg);
     }
-    .wrap{max-width:1280px;margin:0 auto;padding:28px}
-    .hero,.kpis,.grid{display:grid;gap:18px}
-    .hero{grid-template-columns:1.5fr .9fr;margin-bottom:18px}
-    .kpis{grid-template-columns:repeat(4,1fr);margin-bottom:18px}
-    .grid{grid-template-columns:1.2fr .8fr}
+
+    .wrap{
+      max-width:1280px;
+      margin:0 auto;
+      padding:28px;
+    }
+
+    .hero,.kpis,.grid{
+      display:grid;
+      gap:18px;
+    }
+
+    .hero{
+      grid-template-columns:1.5fr .9fr;
+      margin-bottom:18px;
+    }
+
+    .kpis{
+      grid-template-columns:repeat(4,1fr);
+      margin-bottom:18px;
+    }
+
+    .grid{
+      grid-template-columns:1.2fr .8fr;
+    }
+
     .panel{
       background:linear-gradient(180deg,rgba(255,255,255,.02),transparent),var(--panel);
       border:1px solid var(--line);
@@ -40,6 +63,7 @@
       padding:18px;
       box-shadow:0 18px 44px rgba(0,0,0,.24);
     }
+
     .badge{
       display:inline-flex;
       align-items:center;
@@ -53,33 +77,56 @@
       border:1px solid rgba(96,165,250,.28);
       color:#d9e8ff;
     }
-    h1{margin:10px 0 8px;font-size:32px;letter-spacing:-.04em}
-    .sub,.meta{color:var(--muted);line-height:1.5}
+
+    h1{
+      margin:10px 0 8px;
+      font-size:32px;
+      letter-spacing:-.04em;
+    }
+
+    .sub,.meta{
+      color:var(--muted);
+      line-height:1.5;
+    }
+
     .label{
       font-size:11px;
       letter-spacing:.12em;
       text-transform:uppercase;
       color:var(--muted);
     }
+
     .value{
       font-size:30px;
       font-weight:850;
       letter-spacing:-.04em;
       margin:8px 0 6px;
     }
-    .section-title{margin:0 0 10px;font-size:18px;font-weight:850}
-    table{width:100%;border-collapse:collapse}
+
+    .section-title{
+      margin:0 0 10px;
+      font-size:18px;
+      font-weight:850;
+    }
+
+    table{
+      width:100%;
+      border-collapse:collapse;
+    }
+
     th,td{
       padding:10px 8px;
       border-bottom:1px solid var(--line);
       text-align:left;
     }
+
     th{
       color:var(--muted);
       font-size:11px;
       text-transform:uppercase;
       letter-spacing:.12em;
     }
+
     .rank{
       display:inline-grid;
       place-items:center;
@@ -90,6 +137,7 @@
       font-weight:850;
       background:rgba(96,165,250,.16);
     }
+
     .pill{
       display:inline-block;
       padding:5px 9px;
@@ -98,9 +146,11 @@
       font-weight:800;
       border:1px solid var(--line);
     }
+
     .green{background:rgba(34,197,94,.12);color:#b9f5c9}
     .amber{background:rgba(245,158,11,.12);color:#ffd897}
     .red{background:rgba(239,68,68,.12);color:#ffb4b4}
+
     .progress{
       height:10px;
       background:rgba(255,255,255,.07);
@@ -108,12 +158,19 @@
       overflow:hidden;
       min-width:120px;
     }
+
     .progress > span{
       display:block;
       height:100%;
       background:linear-gradient(90deg,var(--blue),var(--violet));
     }
-    .list{display:flex;flex-direction:column;gap:10px}
+
+    .list{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+
     .list-item{
       display:flex;
       justify-content:space-between;
@@ -123,6 +180,7 @@
       background:var(--panel2);
       border:1px solid var(--line);
     }
+
     .error{
       margin-bottom:18px;
       padding:12px 16px;
@@ -131,7 +189,12 @@
       border:1px solid rgba(255,255,255,.12);
       display:none;
     }
-    .small{font-size:12px;color:var(--muted)}
+
+    .small{
+      font-size:12px;
+      color:var(--muted);
+    }
+
     @media (max-width:1000px){
       .hero,.kpis,.grid{grid-template-columns:1fr}
     }
@@ -206,7 +269,6 @@
   </div>
 
   <script>
-    // Replace this with your PUBLISHED CSV link, not the normal /edit link
     const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT9Ld3MQ4IU614rQ3JnnlKgLbSfCpoZvO51STfkU1RPBWnn6Df8dT1DFOlcRBOUgGqzn93eFr1jdYKz/pub?gid=1907582977&single=true&output=csv";
 
     const fmtMoney = n => new Intl.NumberFormat('en-ZA', {
@@ -289,111 +351,8 @@
     }
 
     async function loadDashboard() {
-  try {
-    const res = await fetch(CSV_URL + "&_t=" + Date.now());
-    const text = await res.text();
-
-    const rows = text.split("\n").map(r => r.split(","));
-
-    console.log("RAW ROWS:", rows);
-
-    // Find header row dynamically (contains "Consultant")
-    const headerIndex = rows.findIndex(r =>
-      r.join("").toLowerCase().includes("consultant")
-    );
-
-    if (headerIndex === -1) {
-      throw new Error("Could not find header row");
-    }
-
-    const dataRows = rows.slice(headerIndex + 1);
-
-    const consultants = dataRows
-      .map(r => {
-        const name = (r[1] || "").trim();
-        if (!name) return null;
-
-        const actual = cleanNumber(r[7]);
-        const target = cleanNumber(r[8]);
-        const pct = target ? actual / target : 0;
-
-        return {
-          name,
-          actual,
-          target,
-          pct,
-          gap: target - actual,
-          band: bandFromPct(pct)
-        };
-      })
-      .filter(Boolean);
-
-    console.log("CONSULTANTS:", consultants);
-
-    if (consultants.length === 0) {
-      throw new Error("No data parsed from sheet");
-    }
-
-    // KPIs
-    const teamActual = consultants.reduce((s, r) => s + r.actual, 0);
-    const teamTarget = consultants.reduce((s, r) => s + r.target, 0);
-    const best = [...consultants].sort((a, b) => b.actual - a.actual)[0];
-    const active = consultants.filter(r => r.actual > 0).length;
-
-    document.getElementById("kpiTotal").textContent = fmtMoney(teamActual);
-    document.getElementById("kpiTarget").textContent =
-      `Target ${fmtMoney(teamTarget)}`;
-    document.getElementById("kpiGap").textContent =
-      fmtMoney(teamTarget - teamActual);
-    document.getElementById("kpiBest").textContent =
-      best ? best.name : "-";
-    document.getElementById("kpiBestSub").textContent =
-      best ? fmtMoney(best.actual) : "-";
-    document.getElementById("kpiActive").textContent = active;
-
-    document.getElementById("quarterPulse").textContent =
-      `${consultants.length} consultants • ${fmtMoney(teamActual)} total`;
-
-    // Leaderboard
-    const sorted = [...consultants].sort((a, b) => b.actual - a.actual);
-
-    document.getElementById("leaderboardBody").innerHTML = sorted.map((r, i) => `
-      <tr>
-        <td>${i + 1}</td>
-        <td>${r.name}</td>
-        <td>${fmtMoney(r.actual)}</td>
-        <td>${fmtMoney(r.target)}</td>
-        <td>${fmtPct(r.pct)}</td>
-        <td>${r.band}</td>
-      </tr>
-    `).join("");
-
-    // Watchlist
-    const watch = [...consultants]
-      .sort((a, b) => b.gap - a.gap)
-      .slice(0, 5);
-
-    document.getElementById("watchlist").innerHTML = watch.map(r => `
-      <div class="list-item">
-        <div>
-          <strong>${r.name}</strong>
-          <div class="small">${r.band}</div>
-        </div>
-        <div>
-          <strong>${fmtMoney(r.gap)}</strong>
-        </div>
-      </div>
-    `).join("");
-
-  } catch (err) {
-    console.error(err);
-    showError("Error loading sheet: " + err.message);
-  }
-}
-
-        const res = await fetch(CSV_URL + (CSV_URL.includes("?") ? "&" : "?") + "_t=" + Date.now(), {
-          cache: "no-store"
-        });
+      try {
+        const res = await fetch(CSV_URL + "&_t=" + Date.now(), { cache: "no-store" });
 
         if (!res.ok) {
           throw new Error(`Sheet load failed with status ${res.status}`);
@@ -405,51 +364,57 @@
           .filter(line => line.trim() !== "")
           .map(parseCSVLine);
 
-        // Current sheet layout assumption:
-        // col 1 = consultant name
-        // col 4 = Apr
-        // col 5 = May
-        // col 6 = Jun
-        // col 7 = Q1 Actual
-        // col 8 = Q1 Target
-        // col 9 = % Achieved
-        const consultants = rows.slice(5, 30).map(r => {
+        console.log("RAW ROWS:", rows);
+
+        const headerIndex = rows.findIndex(r =>
+          r.join(" ").toLowerCase().includes("consultant")
+        );
+
+        if (headerIndex === -1) {
+          throw new Error("Could not find header row");
+        }
+
+        const dataRows = rows.slice(headerIndex + 1);
+
+        const consultants = dataRows.map(r => {
           const name = (r[1] || "").trim();
-          const apr = cleanNumber(r[4]);
-          const may = cleanNumber(r[5]);
-          const jun = cleanNumber(r[6]);
+          if (!name || name === "0") return null;
+
           const actual = cleanNumber(r[7]);
           const target = cleanNumber(r[8]);
-          const pct = cleanNumber(r[9]);
-          const gap = target - actual;
+          const pctFromSheet = cleanNumber(r[9]);
+          const pct = pctFromSheet || (target ? actual / target : 0);
 
           return {
             name,
-            apr,
-            may,
-            jun,
             actual,
             target,
             pct,
-            gap,
+            gap: target - actual,
             band: bandFromPct(pct)
           };
-        }).filter(r => r.name && r.name !== "0");
+        }).filter(Boolean);
+
+        console.log("CONSULTANTS:", consultants);
+
+        if (!consultants.length) {
+          throw new Error("No data parsed from sheet");
+        }
 
         const teamActual = consultants.reduce((s, r) => s + r.actual, 0);
         const teamTarget = consultants.reduce((s, r) => s + r.target, 0);
         const teamPct = teamTarget ? teamActual / teamTarget : 0;
-        const best = [...consultants].sort((a, b) => b.pct - a.pct)[0];
+        const best = [...consultants].sort((a, b) => b.actual - a.actual)[0];
         const active = consultants.filter(r => r.actual > 0).length;
 
         document.getElementById("kpiTotal").textContent = fmtMoney(teamActual);
         document.getElementById("kpiTarget").textContent = `Target ${fmtMoney(teamTarget)} • ${fmtPct(teamPct)}`;
         document.getElementById("kpiGap").textContent = fmtMoney(teamTarget - teamActual);
         document.getElementById("kpiBest").textContent = best ? best.name : "—";
-        document.getElementById("kpiBestSub").textContent = best ? `${fmtPct(best.pct)} • ${fmtMoney(best.actual)}` : "—";
+        document.getElementById("kpiBestSub").textContent = best ? fmtMoney(best.actual) : "—";
         document.getElementById("kpiActive").textContent = active;
         document.getElementById("quarterPulse").textContent =
-          `Team NFI ${fmtMoney(teamActual)} against ${fmtMoney(teamTarget)} across ${consultants.length} consultants.`;
+          `${consultants.length} consultants • ${fmtMoney(teamActual)} total`;
 
         const sorted = [...consultants].sort((a, b) => b.actual - a.actual);
 
@@ -488,7 +453,7 @@
 
       } catch (err) {
         console.error(err);
-        showError(`Error loading sheet: ${err.message}`);
+        showError("Error loading sheet: " + err.message);
       }
     }
 
